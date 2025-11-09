@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monthly Schedule Total Hours Calculator</title>
+  <!-- Libraries for CSV and curated PDF export -->
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root{
+      --glass-bg: rgba(255,255,255,0.16);
+      --glass-stroke: rgba(255,255,255,0.35);
+      --text: #0b0b0f;
+      --muted: rgba(0,0,0,0.6);
+      --accent: #0a84ff; /* iOS blue */
+      --danger: #ff453a; /* iOS red */
+      --ok: #34c759; /* iOS green */
+      --bg1: #0f1220;
+      --bg2: #1b1f36;
+      --card-radius: 18px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:#f6f7fb;
+      background: radial-gradient(1200px 900px at 10% -10%, #3b60ff22, transparent 60%),
+                  radial-gradient(900px 700px at 110% 10%, #00ffd52a, transparent 60%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+    header{
+      display:flex;gap:16px;align-items:center;justify-content:space-between;
+      padding:20px;position:sticky;top:0;z-index:10;
+      backdrop-filter:saturate(180%) blur(20px);
+      background: linear-gradient(#ffffff08,#ffffff00);
+      border-bottom: 1px solid #ffffff28;
+    }
+    .brand{font-weight:700;font-size:20px;letter-spacing:.3px}
+    .wrap{display:grid;grid-template-columns: 420px 1fr;gap:20px;padding:20px;}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+
+    .glass{
+      background: var(--glass-bg);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      border: 1px solid var(--glass-stroke);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+    }
+    .toolbar{display:flex;gap:12px;align-items:center}
+    .toolbar .pill{
+      border-radius: 999px; padding:10px 14px; display:inline-flex; gap:10px; align-items:center;
+      border:1px solid #ffffff33;background:#ffffff14;color:#fff;cursor:pointer;user-select:none
+    }
+    input[type="month"], select, input[type="number"], input[type="text"]{
+      color:#fff; background:#ffffff18; border:1px solid #ffffff33; border-radius:12px; padding:10px 12px; outline:none;
+    }
+    input[type="month"]::-webkit-calendar-picker-indicator{filter:invert(1)}
+    button{cursor:pointer}
+    .btn{border:none;border-radius:12px;padding:10px 14px;background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+    .btn.ghost{background:#ffffff10;border:1px solid #ffffff33}
+    .btn.danger{background:var(--danger)}
+
+    /* Calendar */
+    .calendar{padding:16px}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+    .dow{opacity:.75;font-size:12px;text-align:center;margin-bottom:8px}
+    .day{position:relative; padding:12px; min-height:90px; border-radius:14px; border:1px solid #ffffff2d; background:#ffffff10; cursor:pointer}
+    .day:hover{outline:2px solid #ffffff50}
+    .day .date{font-weight:700}
+    .day .meta{position:absolute;right:10px;bottom:10px;font-size:12px;opacity:.85}
+    .day.fullcancel{background:linear-gradient(135deg,#ff453a33,#ff453a14);}
+
+    /* Right column */
+    .panel{padding:16px;display:flex;flex-direction:column;gap:16px}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .card{padding:14px;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12}
+    .card h4{margin:0 0 6px 0;font-size:13px;opacity:.8;font-weight:600}
+    .stat{font-size:22px;font-weight:800}
+
+    /* Day editor modal */
+    dialog#dayEditor{border:none;padding:0;background:transparent}
+    .modal{width:min(760px,96vw);} 
+    .modal .head{display:flex;justify-content:space-between;align-items:center;padding:16px}
+    .modal .body{padding:0 16px 16px 16px}
+    .period-row{display:grid; grid-template-columns: 1fr 160px 140px 120px; gap:10px; align-items:center; padding:10px; border-bottom:1px dashed #ffffff22}
+    .badge{font-size:11px;border:1px solid #ffffff3a;padding:4px 8px;border-radius:999px;background:#ffffff14}
+    .seg{display:inline-flex;border-radius:999px;overflow:hidden;border:1px solid #ffffff33}
+    .seg button{background:#ffffff10;color:#fff;border:none;padding:8px 10px}
+    .seg button.active{background:var(--accent)}
+    .tiny{font-size:12px;opacity:.8}
+
+    .switch{position:relative;display:inline-block;width:54px;height:30px}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ffffff26;transition:.2s;border-radius:30px;border:1px solid #ffffff44}
+    .slider:before{position:absolute;content:"";height:24px;width:24px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+    input:checked + .slider{background:linear-gradient(135deg,#0a84ff,#64d2ff)}
+    input:checked + .slider:before{transform:translateX(24px)}
+
+    .footer-actions{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid #ffffff28;background:#ffffff10;border-radius:0 0 var(--card-radius) var(--card-radius)}
+
+    .help{font-size:12px;opacity:.8}
+    .note{opacity:.7}
+  </style>
+</head>
+<body id="captureRoot">
+  <header class="glass">
+    <div class="brand">Schedule Hours</div>
+    <div class="toolbar">
+      <label class="pill">Month <input id="monthPicker" type="month" /></label>
+      <button id="resetMonth" class="btn ghost" title="Clear this month">Reset</button>
+      <button id="exportCSV" class="btn ghost">Export CSV</button>
+      <button id="exportPDF" class="btn">Export PDF</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Left: Calendar -->
+    <section class="calendar glass">
+      <div id="monthTitle" style="font-weight:800;font-size:18px;padding:4px 0 10px 2px"></div>
+      <div class="cal-grid tiny" style="margin-bottom:6px">
+        <div class="dow">Mon</div>
+        <div class="dow">Tue</div>
+        <div class="dow">Wed</div>
+        <div class="dow">Thu</div>
+        <div class="dow">Fri</div>
+        <div class="dow">Sat</div>
+        <div class="dow">Sun</div>
+      </div>
+      <div id="calendarGrid" class="cal-grid"></div>
+      <p class="help" style="margin-top:10px">Click a date to set periods. Red tint means full-day cancellation.</p>
+    </section>
+
+    <!-- Right: Summary and legend -->
+    <section class="panel glass" id="summaryPanel">
+      <div class="summary">
+        <div class="card">
+          <h4>Month Total</h4>
+          <div class="stat" id="totalHours">0.00 h</div>
+        </div>
+        <div class="card">
+          <h4>Scheduled Days</h4>
+          <div class="stat" id="scheduledDays">0</div>
+        </div>
+        <div class="card">
+          <h4>Cancelled Minutes</h4>
+          <div class="stat" id="cancelledMinutes">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>Legend</h4>
+        <div class="tiny">
+          <p><span class="badge">Primary</span> period = 35 minutes.</p>
+          <p><span class="badge">Secondary</span> P1–P5 = 40 minutes. P6–P9 = 35 minutes.</p>
+          <p>Totals reported in hours with two decimals.</p>
+        </div>
+      </div>
+
+      <div class="card" id="dailyBreakdown">
+        <h4>Daily Breakdown</h4>
+        <div class="tiny note">Select a date to preview the per-day totals.</div>
+        <div id="breakdownContent" class="tiny"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Day editor modal -->
+  <dialog id="dayEditor">
+    <div class="modal glass">
+      <div class="head">
+        <div>
+          <div class="tiny" style="opacity:.8">Edit day</div>
+          <div id="editDateTitle" style="font-size:18px;font-weight:800"></div>
+        </div>
+        <div>
+          <label class="tiny" style="margin-right:8px">Full day cancellation</label>
+          <label class="switch">
+            <input id="fullCancelToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="body">
+        <div id="periodList"></div>
+      </div>
+      <div class="footer-actions">
+        <div style="display:flex;gap:8px">
+          <button id="quickNone" class="btn ghost" title="Set all periods to None">Clear day</button>
+          <button id="quickPrimary" class="btn ghost" title="Set all periods to Primary">All Primary</button>
+          <button id="quickSecondary" class="btn ghost" title="Set all periods to Secondary">All Secondary</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="saveDay" class="btn">Save</button>
+          <button id="closeEditor" class="btn danger">Close</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    // === Constants ==========================================================
+    const PERIOD_COUNT = 9;
+    // Durations in minutes
+    const PRIMARY_MINS = Array(PERIOD_COUNT).fill(35);
+    const SECONDARY_MINS = [40,40,40,40,40,35,35,35,35];
+
+    // Storage helpers --------------------------------------------------------
+    const keyForMonth = (yyyyMM) => `timetable-${yyyyMM}`;
+
+    function loadMonth(yyyyMM){
+      const raw = localStorage.getItem(keyForMonth(yyyyMM));
+      if(!raw){
+        return { month: yyyyMM, dates: {} };
+      }
+      try{ return JSON.parse(raw); }catch{ return { month: yyyyMM, dates:{} }; }
+    }
+    function saveMonth(doc){
+      localStorage.setItem(keyForMonth(doc.month), JSON.stringify(doc));
+    }
+
+    // Date utilities ---------------------------------------------------------
+    function ymd(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+    function monthLabel(yyyyMM){
+      const [y,m] = yyyyMM.split('-').map(Number);
+      const d = new Date(y, m-1, 1);
+      return d.toLocaleString(undefined, { month:'long', year:'numeric' });
+    }
+    function daysInMonth(yyyyMM){
+      const [y,m] = yyyyMM.split('-').map(Number);
+      const last = new Date(y, m, 0).getDate();
+      const out=[]; for(let i=1;i<=last;i++){ out.push(new Date(y,m-1,i)); }
+      return out;
+    }
+    function weekdayIndexMonFirst(jsDay){
+      // JS: 0=Sun..6=Sat; We want Mon=0..Sun=6
+      return (jsDay+6)%7;
+    }
+
+    // Data model for a single date -----------------------------------------
+    function emptyDay(){
+      return {
+        fullCancel:false,
+        periods: Array.from({length:PERIOD_COUNT},()=>({ type:'none', cancel:0 }))
+      };
+    }
+
+    // Compute minutes for a single period selection -------------------------
+    function minutesFor(periodIdx, type){
+      if(type==='primary') return PRIMARY_MINS[periodIdx];
+      if(type==='secondary') return SECONDARY_MINS[periodIdx];
+      return 0;
+    }
+
+    // Clamp helper
+    const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+
+    // Global state -----------------------------------------------------------
+    const monthPicker = document.getElementById('monthPicker');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const monthTitle = document.getElementById('monthTitle');
+    const totalHoursEl = document.getElementById('totalHours');
+    const scheduledDaysEl = document.getElementById('scheduledDays');
+    const cancelledMinutesEl = document.getElementById('cancelledMinutes');
+    const breakdownContent = document.getElementById('breakdownContent');
+
+    const dayEditor = document.getElementById('dayEditor');
+    const editDateTitle = document.getElementById('editDateTitle');
+    const fullCancelToggle = document.getElementById('fullCancelToggle');
+    const periodList = document.getElementById('periodList');
+    const quickNone = document.getElementById('quickNone');
+    const quickPrimary = document.getElementById('quickPrimary');
+    const quickSecondary = document.getElementById('quickSecondary');
+    const saveDayBtn = document.getElementById('saveDay');
+    const closeEditorBtn = document.getElementById('closeEditor');
+
+    const exportCSVBtn = document.getElementById('exportCSV');
+    const exportPDFBtn = document.getElementById('exportPDF');
+    const resetMonthBtn = document.getElementById('resetMonth');
+
+    let currentMonth; // yyyy-mm
+    let monthDoc; // {month, dates: { y-m-d : DayData }}
+    let editingYMD = null;
+
+    // Init ------------------------------------------------------------------
+    (function init(){
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,'0');
+      currentMonth = `${yyyy}-${mm}`;
+      monthPicker.value = currentMonth;
+      monthDoc = loadMonth(currentMonth);
+      renderCalendar();
+      updateMonthSummary();
+      runSelfTests();
+    })();
+
+    // Render calendar -------------------------------------------------------
+    function renderCalendar(){
+      monthTitle.textContent = monthLabel(currentMonth);
+      const days = daysInMonth(currentMonth);
+
+      // Figure out leading blanks for Monday-first grid
+      const first = days[0];
+      const lead = weekdayIndexMonFirst(first.getDay());
+
+      calendarGrid.innerHTML = '';
+      // add blanks
+      for(let i=0;i<lead;i++){
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.style.visibility='hidden';
+        calendarGrid.appendChild(div);
+      }
+      // add days
+      for(const d of days){
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        const id = ymd(d);
+        const data = monthDoc.dates[id];
+        if(data?.fullCancel) cell.classList.add('fullcancel');
+        const total = dayMinutes(data);
+        cell.innerHTML = `<div class="date">${d.getDate()}</div>`+
+                         `<div class="meta">${(total/60).toFixed(2)} h</div>`;
+        cell.addEventListener('click', ()=> openDayEditor(id));
+        calendarGrid.appendChild(cell);
+      }
+      // trailing blanks to complete last row
+      const used = lead + days.length;
+      for(let i=0;i<(Math.ceil(used/7)*7-used);i++){
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.style.visibility='hidden';
+        calendarGrid.appendChild(div);
+      }
+    }
+
+    // Day totals ------------------------------------------------------------
+    function dayMinutes(day){
+      if(!day) return 0;
+      if(day.fullCancel) return 0;
+      let mins = 0; 
+      day.periods.forEach((p,idx)=>{
+        const base = minutesFor(idx, p.type);
+        const c = clamp(Number(p.cancel)||0, 0, base);
+        mins += base - c;
+      });
+      return Math.max(0, mins);
+    }
+
+    // Month summary ---------------------------------------------------------
+    function updateMonthSummary(){
+      const days = daysInMonth(currentMonth);
+      let totalMins = 0; let scheduledDays = 0; let canceled = 0;
+      for(const d of days){
+        const id = ymd(d);
+        const data = monthDoc.dates[id];
+        if(!data) continue;
+        const dm = dayMinutes(data);
+        const base = data.periods.reduce((acc,p,idx)=>acc+minutesFor(idx,p.type),0);
+        const canc = Math.max(0, base - dm);
+        totalMins += dm;
+        canceled += canc;
+        if(dm>0 || base>0 || data.fullCancel) scheduledDays++;
+      }
+      totalHoursEl.textContent = (totalMins/60).toFixed(2) + ' h';
+      scheduledDaysEl.textContent = String(scheduledDays);
+      cancelledMinutesEl.textContent = String(Math.round(canceled));
+    }
+
+    // Editor ---------------------------------------------------------------
+    function openDayEditor(id){
+      editingYMD = id;
+      const d = new Date(id);
+      editDateTitle.textContent = d.toLocaleDateString(undefined,{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+      const data = monthDoc.dates[id] || emptyDay();
+      fullCancelToggle.checked = !!data.fullCancel;
+      periodList.innerHTML = '';
+      for(let i=0;i<PERIOD_COUNT;i++){
+        const row = document.createElement('div');
+        row.className = 'period-row';
+        const basePrimary = PRIMARY_MINS[i];
+        const baseSecondary = SECONDARY_MINS[i];
+        const p = data.periods[i] || {type:'none', cancel:0};
+        row.innerHTML = `
+          <div>
+            <div style="font-weight:700">Period ${i+1}</div>
+            <div class="tiny">Primary ${basePrimary}m • Secondary ${baseSecondary}m</div>
+          </div>
+          <div class="seg">
+            <button class="segbtn ${p.type==='none'?'active':''}" data-i="${i}" data-type="none">None</button>
+            <button class="segbtn ${p.type==='primary'?'active':''}" data-i="${i}" data-type="primary">Primary</button>
+            <button class="segbtn ${p.type==='secondary'?'active':''}" data-i="${i}" data-type="secondary">Secondary</button>
+          </div>
+          <div>
+            <label class="tiny">Cancel minutes</label>
+            <input class="cancelInp" data-i="${i}" type="number" min="0" step="5" value="${p.cancel||0}" style="width:120px"/>
+          </div>
+          <div class="tiny" id="pm${i}"></div>
+        `;
+        periodList.appendChild(row);
+      }
+      attachEditorHandlers(data);
+      recalcEditorPreview();
+      dayEditor.showModal();
+    }
+
+    function attachEditorHandlers(data){
+      periodList.querySelectorAll('.segbtn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const i = Number(btn.dataset.i);
+          const t = btn.dataset.type;
+          data.periods[i].type = t;
+          // Update active state in this row
+          const rowBtns = btn.parentElement.querySelectorAll('button');
+          rowBtns.forEach(b=>b.classList.toggle('active', b===btn));
+          recalcEditorPreview();
+        });
+      });
+      periodList.querySelectorAll('.cancelInp').forEach(inp=>{
+        inp.addEventListener('input', ()=>{
+          const i = Number(inp.dataset.i);
+          const base = minutesFor(i, data.periods[i].type);
+          const val = clamp(Number(inp.value)||0, 0, base);
+          inp.value = val;
+          data.periods[i].cancel = val;
+          recalcEditorPreview();
+        });
+      });
+      fullCancelToggle.onchange = ()=>{ recalcEditorPreview(); };
+
+      // Quick actions
+      quickNone.onclick = ()=>{ data.periods.forEach(p=>{p.type='none';p.cancel=0}); syncSegsFromData(data); recalcEditorPreview(); };
+      quickPrimary.onclick = ()=>{ data.periods.forEach((p,i)=>{p.type='primary';p.cancel=0}); syncSegsFromData(data); recalcEditorPreview(); };
+      quickSecondary.onclick = ()=>{ data.periods.forEach((p,i)=>{p.type='secondary';p.cancel=0}); syncSegsFromData(data); recalcEditorPreview(); };
+
+      saveDayBtn.onclick = ()=>{
+        const toSave = monthDoc.dates[editingYMD] || emptyDay();
+        toSave.fullCancel = fullCancelToggle.checked;
+        // copy from data reference used in editor
+        toSave.periods = data.periods.map(p=>({type:p.type, cancel: Number(p.cancel)||0}));
+        monthDoc.dates[editingYMD] = toSave;
+        saveMonth(monthDoc);
+        dayEditor.close();
+        renderCalendar();
+        updateMonthSummary();
+        showDailyBreakdown(editingYMD);
+      };
+      closeEditorBtn.onclick = ()=> dayEditor.close();
+    }
+
+    function syncSegsFromData(data){
+      periodList.querySelectorAll('.seg').forEach((seg,idx)=>{
+        seg.querySelectorAll('button').forEach(b=>{
+          b.classList.toggle('active', b.dataset.type === data.periods[idx].type);
+        });
+      });
+      periodList.querySelectorAll('.cancelInp').forEach((inp,idx)=>{
+        inp.value = data.periods[idx].cancel || 0;
+      });
+    }
+
+    function recalcEditorPreview(){
+      // Preview per-period minutes after cancellation
+      const data = monthDoc.dates[editingYMD] || emptyDay();
+      const fc = fullCancelToggle.checked;
+      let total = 0; 
+      for(let i=0;i<PERIOD_COUNT;i++){
+        const base = minutesFor(i, data.periods[i].type);
+        const c = clamp(Number(periodList.querySelector(`.cancelInp[data-i='${i}']`).value)||0, 0, base);
+        const left = fc ? 0 : base - c;
+        periodList.querySelector(`#pm${i}`).textContent = left ? `${left} min` : '—';
+        total += left;
+      }
+      editDateTitle.dataset.total = total;
+    }
+
+    function showDailyBreakdown(id){
+      const d = new Date(id);
+      const data = monthDoc.dates[id];
+      if(!data){ breakdownContent.innerHTML = '<div class="tiny">No schedule stored for this date.</div>'; return; }
+      const dm = dayMinutes(data);
+      let html = `<div style="margin:6px 0 10px 0"><strong>${d.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</strong> — ${ (dm/60).toFixed(2) } h</div>`;
+      html += '<div class="tiny">';
+      for(let i=0;i<PERIOD_COUNT;i++){
+        const p = data.periods[i];
+        const base = minutesFor(i, p.type);
+        if(base===0) continue;
+        const left = Math.max(0, base - (Number(p.cancel)||0));
+        html += `<div>• P${i+1} ${p.type} → ${left} min ${p.cancel?`(cancel ${p.cancel})`:''}</div>`;
+      }
+      html += '</div>';
+      breakdownContent.innerHTML = html;
+    }
+
+    // CSV builder so we can also test easily
+    function buildCSVForMonth(){
+      const days = daysInMonth(currentMonth);
+      const header = ['Date'];
+      for(let i=1;i<=PERIOD_COUNT;i++){ header.push(`P${i} Type`, `P${i} Cancel`); }
+      header.push('Day Minutes','Day Hours');
+      const rows = [header];
+      for(const d of days){
+        const id = ymd(d);
+        const data = monthDoc.dates[id] || emptyDay();
+        const row = [id];
+        let mins = 0;
+        for(let i=0;i<PERIOD_COUNT;i++){
+          const base = minutesFor(i, data.periods[i].type);
+          const cancel = data.fullCancel ? base : clamp(Number(data.periods[i].cancel)||0,0,base);
+          const left = data.fullCancel ? 0 : base - cancel;
+          mins += left;
+          row.push(data.periods[i].type, String(cancel));
+        }
+        rows.push([...row, String(mins), (mins/60).toFixed(2)]);
+      }
+      return rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    }
+
+    // Events ---------------------------------------------------------------
+    monthPicker.addEventListener('change', ()=>{
+      currentMonth = monthPicker.value;
+      monthDoc = loadMonth(currentMonth);
+      renderCalendar();
+      updateMonthSummary();
+      breakdownContent.innerHTML = '';
+    });
+
+    resetMonthBtn.addEventListener('click', ()=>{
+      if(confirm('Clear all data for this month?')){
+        monthDoc = { month: currentMonth, dates: {} };
+        saveMonth(monthDoc);
+        renderCalendar();
+        updateMonthSummary();
+        breakdownContent.innerHTML = '';
+      }
+    });
+
+    exportCSVBtn.addEventListener('click', ()=>{
+      const csv = buildCSVForMonth();
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `schedule-${currentMonth}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // --- Optional screenshot-based PDF (kept but unused) -------------------
+    async function generatePDF(){
+      if(document.fonts && document.fonts.ready){
+        try{ await document.fonts.ready; }catch(e){}
+      }
+      const root = document.getElementById('captureRoot');
+      const prevY = window.scrollY; window.scrollTo(0,0);
+      const canvas = await html2canvas(root, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#0f1220',
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight
+      });
+      window.scrollTo(0, prevY);
+
+      const { jsPDF } = window.jspdf || {};
+      if(!jsPDF) throw new Error('jsPDF not loaded');
+
+      const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({orientation, unit:'pt', format:'a4'});
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 24; 
+      const imgWidth = pageWidth - margin*2;
+      const scale = imgWidth / canvas.width; 
+      const sliceHeight = Math.floor((pageHeight - margin*2) / scale);
+
+      let y = 0; let pageIndex = 0;
+      while(y < canvas.height){
+        const h = Math.min(sliceHeight, canvas.height - y);
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width; slice.height = h;
+        const ctx = slice.getContext('2d');
+        ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+        const imgData = slice.toDataURL('image/png');
+        if(pageIndex>0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, h * scale);
+        y += h; pageIndex++;
+      }
+      pdf.save(`schedule-${currentMonth}.pdf`);
+    }
+
+    // --- Curated vector PDF -----------------------------------------------
+    function abbrType(t){
+      if(t==='primary') return 'Pri';
+      if(t==='secondary') return 'Sec';
+      return '-';
+    }
+
+    function getMonthMatrix(yyyyMM){
+      const days = daysInMonth(yyyyMM);
+      const first = days[0];
+      const lead = weekdayIndexMonFirst(first.getDay());
+      const weeks = [];
+      let row = new Array(7).fill(null);
+      for(let i=0;i<lead;i++) row[i]=null;
+      let idx = lead;
+      for(const d of days){
+        row[idx++] = new Date(d);
+        if(idx===7){ weeks.push(row); row = new Array(7).fill(null); idx=0; }
+      }
+      if(idx!==0) weeks.push(row);
+      return weeks;
+    }
+
+    function computeMonthTotals(){
+      const allDays = daysInMonth(currentMonth);
+      let totalMins = 0, scheduledDays = 0, canceled = 0;
+      for(const d of allDays){
+        const id = ymd(d);
+        const data = monthDoc.dates[id];
+        if(!data) continue;
+        const dm = dayMinutes(data);
+        const base = data.periods.reduce((acc,p,idx)=>acc+minutesFor(idx,p.type),0);
+        const canc = Math.max(0, base - dm);
+        totalMins += dm; canceled += canc;
+        if(dm>0 || base>0 || data.fullCancel) scheduledDays++;
+      }
+      return { totalMins, scheduledDays, canceled };
+    }
+
+    function generateCuratedPDF(){
+      const { jsPDF } = window.jspdf || {};
+      if(!jsPDF){ alert('PDF library missing'); return; }
+      const doc = new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
+      const pw = doc.internal.pageSize.getWidth();
+      const ph = doc.internal.pageSize.getHeight();
+      const margin = 36;
+      const title = 'Monthly Schedule Hours';
+      const label = monthLabel(currentMonth);
+
+      // Header
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(18);
+      doc.text(title, margin, margin);
+      doc.setFontSize(12);
+      doc.setTextColor(120);
+      doc.text(label, margin, margin+18);
+      doc.setTextColor(0);
+
+      // Summary cards
+      const { totalMins, scheduledDays, canceled } = computeMonthTotals();
+      const cardsY = margin + 34;
+      const gap = 14;
+      const cardW = (pw - margin*2 - gap*2)/3;
+      const cardH = 52;
+      const cards = [
+        {h:'Month Total', v:(totalMins/60).toFixed(2)+' h'},
+        {h:'Scheduled Days', v:String(scheduledDays)},
+        {h:'Cancelled Minutes', v:String(Math.round(canceled))}
+      ];
+      cards.forEach((c,i)=>{
+        const x = margin + i*(cardW+gap);
+        doc.setDrawColor(200); doc.setFillColor(245,247,253);
+        doc.roundedRect(x, cardsY, cardW, cardH, 8, 8, 'FD');
+        doc.setFontSize(10); doc.setTextColor(90); doc.text(c.h, x+10, cardsY+18);
+        doc.setFontSize(16); doc.setTextColor(0); doc.text(c.v, x+10, cardsY+38);
+      });
+
+      // Legend
+      let y = cardsY + cardH + 18;
+      doc.setFontSize(10); doc.setTextColor(80);
+      doc.text('Legend: Primary period = 35 min. Secondary P1–P5 = 40 min, P6–P9 = 35 min. Totals in hours with two decimals.', margin, y);
+      doc.setTextColor(0);
+      y += 12;
+
+      // Calendar grid (vector)
+      const weeks = getMonthMatrix(currentMonth);
+      const calTop = y + 6;
+      const calRows = weeks.length;
+      const calW = pw - margin*2;
+      const calH = ph - calTop - margin;
+      const cellW = calW/7;
+      const cellH = calH/calRows;
+
+      doc.setFontSize(9);
+      weeks.forEach((week,rowIdx)=>{
+        week.forEach((d,colIdx)=>{
+          const x = margin + colIdx*cellW;
+          const yy = calTop + rowIdx*cellH;
+          doc.setDrawColor(210); doc.setFillColor(250);
+          doc.roundedRect(x, yy, cellW-2, cellH-2, 6, 6, 'S');
+          if(!d) return;
+          const id = ymd(d); const data = monthDoc.dates[id];
+          const mins = dayMinutes(data);
+          const hours = (mins/60).toFixed(2);
+          const isFull = !!(data && data.fullCancel);
+          if(isFull){ doc.setFillColor(255,230,230); doc.roundedRect(x, yy, cellW-2, cellH-2, 6, 6, 'F'); }
+          doc.setFont('helvetica','bold'); doc.setFontSize(10);
+          doc.text(String(d.getDate()), x+8, yy+14);
+          doc.setFont('helvetica','normal'); doc.setFontSize(9);
+          doc.setTextColor(isFull?200:60);
+          doc.text(hours+' h', x + cellW - 8, yy + cellH - 8, {align:'right'});
+          doc.setTextColor(0);
+        });
+      });
+
+      // Details page(s)
+      doc.addPage('landscape');
+      const pw2 = doc.internal.pageSize.getWidth();
+      const margin2 = 32;
+      doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      doc.text('Daily Details — '+label, margin2, margin2);
+      doc.setFont('helvetica','normal');
+
+      const days = daysInMonth(currentMonth);
+      const rows = [];
+      for(const d of days){
+        const id = ymd(d); const data = monthDoc.dates[id];
+        if(!data) continue;
+        const dm = dayMinutes(data);
+        const base = data.periods.reduce((acc,p,idx)=>acc+minutesFor(idx,p.type),0);
+        const canc = Math.max(0, base - dm);
+        const row = [id, data.fullCancel?'Yes':'No'];
+        for(let i=0;i<9;i++) row.push(abbrType((data.periods[i]||{}).type||'none'));
+        row.push(String(Math.round(canc)));
+        row.push(String(dm));
+        row.push((dm/60).toFixed(2));
+        rows.push(row);
+      }
+      const head = [['Date','Full Cancel','P1','P2','P3','P4','P5','P6','P7','P8','P9','Cancelled(min)','Day(min)','Day(h)']];
+      if(doc.autoTable){
+        doc.autoTable({
+          startY: margin2+10,
+          head,
+          body: rows,
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: { fillColor: [10,132,255], textColor: 255 },
+          alternateRowStyles: { fillColor: [245,247,253] },
+          margin: { left: margin2, right: margin2 }
+        });
+      } else {
+        doc.text('AutoTable plugin missing; details table not rendered.', margin2, margin2+20);
+      }
+
+      doc.save(`schedule-${currentMonth}.pdf`);
+    }
+
+    exportPDFBtn.addEventListener('click', ()=>{
+      generateCuratedPDF();
+    });
+
+    // Calendar click handler shows daily breakdown on selection via editor save
+    calendarGrid.addEventListener('click', (e)=>{
+      const cell = e.target.closest('.day');
+      if(!cell || cell.style.visibility==='hidden') return;
+      // breakdown updates on save in editor; nothing here
+    });
+
+    // After closing editor, refresh breakdown for last edited date
+    dayEditor.addEventListener('close', ()=>{
+      if(editingYMD) showDailyBreakdown(editingYMD);
+    });
+
+    // ===================== Self-tests (console) ============================
+    function runSelfTests(){
+      const assertEq = (a,b,msg)=>{ if(a!==b) throw new Error(`[TEST] ${msg} expected ${b} got ${a}`); };
+      try{
+        // Durations
+        assertEq(minutesFor(0,'primary'),35,'Primary P1');
+        assertEq(minutesFor(0,'secondary'),40,'Secondary P1');
+        assertEq(minutesFor(6,'secondary'),35,'Secondary P7');
+
+        // Day minutes calc
+        const d1 = emptyDay();
+        d1.periods[0] = {type:'primary', cancel:5}; // 30
+        d1.periods[5] = {type:'secondary', cancel:0}; // 35
+        assertEq(dayMinutes(d1), 65, 'Day minutes with cancellations');
+        d1.fullCancel = true; 
+        assertEq(dayMinutes(d1), 0, 'Full-day cancellation');
+
+        // CSV header width
+        const csv = buildCSVForMonth();
+        const firstLine = csv.split('\n')[0];
+        const cols = firstLine.split(',');
+        assertEq(cols.length, 1 + PERIOD_COUNT*2 + 2, 'CSV column count');
+
+        // Extra tests
+        assertEq(weekdayIndexMonFirst(1), 0, 'Mon first index');
+        assertEq(weekdayIndexMonFirst(0), 6, 'Sun wraps to 6');
+        assertEq(abbrType('primary'),'Pri','abbr primary');
+        assertEq(abbrType('secondary'),'Sec','abbr secondary');
+        assertEq(abbrType('none'),'-','abbr none');
+
+        // computeMonthTotals sanity using a controlled month
+        const backupMonth = currentMonth; const backupDoc = monthDoc;
+        currentMonth = '2025-01';
+        const testDoc = { month: currentMonth, dates: {} };
+        testDoc.dates['2025-01-15'] = { fullCancel:false, periods: Array.from({length:9},()=>({type:'none',cancel:0})) };
+        testDoc.dates['2025-01-15'].periods[0] = {type:'primary', cancel:0}; // 35 min day
+        monthDoc = testDoc;
+        const t = computeMonthTotals();
+        assertEq(t.totalMins,35,'Totals reflect one primary period day');
+        assertEq(t.scheduledDays,1,'One scheduled day counted');
+        assertEq(t.canceled,0,'No canceled minutes');
+        // restore
+        currentMonth = backupMonth; monthDoc = backupDoc;
+
+        console.log('%cSelf-tests passed','color:#34c759');
+      }catch(e){
+        console.error('Self-tests failed:', e.message);
+      }
+    }
+  </script>
+</body>
+</html>
