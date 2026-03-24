@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Math 8-1 | West Lake Smart Hub | Student App</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="classroom-sync.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cyan:#00f5ff;--purple:#bf00ff;--green:#39ff14;--gold:#ffd700;
+  --dark:#020817;--dark2:#0a1628;--dark3:#0f2044;
+  --glass:rgba(255,255,255,0.05);--gb:rgba(0,245,255,0.2);
+  --text:#e2e8f0;--dim:#94a3b8;
+}
+body{font-family:'Exo 2',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+
+/* HEADER */
+.top-header{
+  background:linear-gradient(90deg,rgba(0,245,255,0.1),rgba(191,0,255,0.1));
+  border-bottom:1px solid rgba(0,245,255,0.25);padding:10px 24px;
+  display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
+  position:sticky;top:0;z-index:200;backdrop-filter:blur(12px);
+}
+.header-date{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--gold);}
+.header-title{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);}
+.header-sep{color:rgba(255,255,255,0.2);font-size:16px;}
+
+/* TAB NAV */
+.tab-nav{
+  display:flex;gap:4px;padding:12px 24px;background:rgba(10,22,40,0.8);
+  border-bottom:1px solid rgba(0,245,255,0.12);position:sticky;top:57px;z-index:190;
+  backdrop-filter:blur(8px);overflow-x:auto;
+}
+.tab-btn{
+  padding:9px 20px;border-radius:8px;border:1px solid rgba(0,245,255,0.2);
+  background:transparent;color:var(--dim);font-family:'Orbitron',sans-serif;
+  font-size:10px;letter-spacing:2px;cursor:pointer;white-space:nowrap;transition:all 0.25s;
+}
+.tab-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.tab-btn.active{background:rgba(0,245,255,0.12);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(0,245,255,0.2);}
+
+/* MAIN CONTENT */
+.tab-content{display:none;padding:28px 32px;max-width:1100px;margin:0 auto;width:100%;flex:1;}
+.tab-content.active{display:block;}
+
+/* GLASS CARD */
+.card{background:var(--glass);border:1px solid var(--gb);border-radius:14px;padding:22px 26px;backdrop-filter:blur(10px);position:relative;overflow:hidden;margin-bottom:18px;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.card-title{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:12px;}
+.card-purple::before{background:linear-gradient(90deg,transparent,var(--purple),transparent);}
+.card-gold::before{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.card-green::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+
+/* HEADINGS */
+.section-title{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;
+  background:linear-gradient(90deg,var(--cyan),#fff);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+.section-sub{font-size:11px;letter-spacing:4px;color:var(--purple);text-transform:uppercase;margin-bottom:22px;font-family:'Orbitron',sans-serif;}
+.divider{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);margin:0 0 22px;}
+
+/* STEPS */
+.step-list{list-style:none;display:flex;flex-direction:column;gap:14px;}
+.step-item{display:flex;gap:14px;align-items:flex-start;font-size:14px;line-height:1.65;}
+.step-num{flex-shrink:0;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#000;}
+.hl{color:var(--cyan);font-weight:700;}
+.hl-gold{color:var(--gold);font-weight:700;}
+.hl-green{color:var(--green);font-weight:700;}
+
+/* ZONES GRID */
+.zones{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px;}
+.zone{border-radius:12px;padding:18px;text-align:center;}
+.zone-1{background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.35);}
+.zone-2{background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.35);}
+.zone-3{background:rgba(191,0,255,0.07);border:1px solid rgba(191,0,255,0.35);}
+.zone h4{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;margin-bottom:6px;}
+.zone-1 h4{color:var(--green);}.zone-2 h4{color:var(--cyan);}.zone-3 h4{color:var(--purple);}
+.zone p{font-size:12px;color:var(--dim);line-height:1.5;}
+
+/* FORMULA BOX */
+.formula{background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:10px;
+  padding:14px 20px;font-family:'Orbitron',sans-serif;font-size:18px;color:var(--cyan);
+  text-align:center;letter-spacing:2px;margin:12px 0;}
+
+/* TAB 2: CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 220px);min-height:400px;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(0,245,255,0.12);border-radius:12px 12px 0 0;margin-bottom:0;}
+.msg{max-width:80%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.65;}
+.msg-user{align-self:flex-end;background:rgba(191,0,255,0.2);border:1px solid rgba(191,0,255,0.35);border-radius:12px 12px 0 12px;}
+.msg-ai{align-self:flex-start;background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.25);border-radius:12px 12px 12px 0;}
+.msg-lbl{font-size:10px;letter-spacing:2px;margin-bottom:4px;font-family:'Orbitron',sans-serif;opacity:0.6;display:flex;align-items:center;gap:8px;}
+.chat-input-row{display:flex;gap:8px;padding:10px;background:rgba(10,22,40,0.9);border:1px solid rgba(0,245,255,0.2);
+  border-top:none;border-radius:0 0 12px 12px;}
+.chat-input{flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(0,245,255,0.2);border-radius:8px;
+  color:var(--text);padding:10px 14px;font-family:'Exo 2',sans-serif;font-size:14px;resize:none;}
+.chat-input:focus{outline:none;border-color:var(--cyan);}
+.send-btn{padding:10px 22px;background:linear-gradient(135deg,rgba(0,245,255,0.2),rgba(191,0,255,0.2));
+  border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);font-family:'Orbitron',sans-serif;
+  font-size:11px;letter-spacing:2px;cursor:pointer;transition:all 0.25s;white-space:nowrap;}
+.send-btn:hover{background:rgba(0,245,255,0.25);box-shadow:0 0 16px rgba(0,245,255,0.3);}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* PROMPT STEMS */
+.prompt-stems{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.stem-btn{background:rgba(0,0,0,0.5);border:1px solid rgba(0,245,255,0.25);border-radius:10px;
+  padding:14px;text-align:left;color:var(--dim);font-size:12px;font-family:monospace;
+  line-height:1.6;cursor:pointer;transition:all 0.25s;position:relative;}
+.stem-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,0.05);}
+.stem-label{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--purple);margin-bottom:6px;}
+.copied-badge{position:absolute;top:8px;right:10px;background:var(--green);color:#000;
+  border-radius:4px;padding:2px 8px;font-size:10px;font-family:'Orbitron',sans-serif;
+  display:none;animation:fadeout 2s forwards;}
+@keyframes fadeout{0%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}
+
+/* TAB 3: REFLECTION */
+.refl-section{margin-bottom:22px;}
+.refl-label{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:10px;}
+.refl-q{font-size:14px;color:var(--text);line-height:1.7;margin-bottom:12px;}
+.radio-group{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.radio-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:8px;
+  border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all 0.2s;font-size:13px;line-height:1.5;}
+.radio-opt:hover{border-color:var(--cyan);background:rgba(0,245,255,0.05);}
+.radio-opt input[type=radio]{accent-color:var(--cyan);width:16px;height:16px;flex-shrink:0;margin-top:2px;}
+.refl-textarea{width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(0,245,255,0.2);border-radius:8px;
+  color:var(--text);padding:12px;font-family:'Exo 2',sans-serif;font-size:13px;
+  resize:vertical;min-height:90px;transition:border-color 0.2s;}
+.refl-textarea:focus{outline:none;border-color:var(--cyan);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.notes-table{width:100%;border-collapse:collapse;}
+.notes-table th{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--cyan);
+  padding:8px 12px;border:1px solid rgba(0,245,255,0.2);background:rgba(0,245,255,0.07);text-align:left;}
+.notes-table td{padding:0;border:1px solid rgba(0,245,255,0.15);}
+.notes-table td textarea{width:100%;min-height:80px;background:transparent;border:none;
+  color:var(--text);padding:10px 12px;font-family:'Exo 2',sans-serif;font-size:13px;
+  resize:vertical;line-height:1.6;}
+.notes-table td textarea:focus{outline:none;background:rgba(0,245,255,0.04);}
+
+/* LEARNING GOAL BADGE */
+.goal-badge{background:linear-gradient(135deg,rgba(0,245,255,0.1),rgba(191,0,255,0.1));
+  border:1px solid rgba(0,245,255,0.3);border-radius:10px;padding:14px 18px;
+  font-size:14px;line-height:1.7;margin-bottom:20px;}
+
+/* SAVE BTN */
+.save-btn{padding:11px 28px;background:linear-gradient(135deg,rgba(57,255,20,0.15),rgba(0,245,255,0.1));
+  border:1px solid var(--green);border-radius:8px;color:var(--green);font-family:'Orbitron',sans-serif;
+  font-size:11px;letter-spacing:2px;cursor:pointer;transition:all 0.25s;}
+.save-btn:hover{background:rgba(57,255,20,0.2);box-shadow:0 0 16px rgba(57,255,20,0.3);}
+
+/* TAB 4: SUBMISSION */
+.padlet-placeholder{
+  width:100%;min-height:70vh;background:rgba(0,0,0,0.5);
+  border:2px dashed rgba(0,245,255,0.3);border-radius:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+.padlet-placeholder h2{font-family:'Orbitron',sans-serif;font-size:22px;color:var(--dim);letter-spacing:4px;}
+.padlet-placeholder p{font-size:13px;color:var(--dim);letter-spacing:2px;font-family:'Orbitron',sans-serif;}
+
+/* TYPING INDICATOR */
+.typing{display:none;align-self:flex-start;padding:10px 14px;}
+.typing span{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);
+  animation:bounce 1.2s infinite;margin-right:4px;}
+.typing span:nth-child(2){animation-delay:0.2s;}.typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-8px);}}
+/* AI AVATAR */
+.msg-lbl{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;margin-bottom:6px;font-family:'Orbitron',sans-serif;opacity:0.85;}
+.msg-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid rgba(0,245,255,0.4);flex-shrink:0;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--dark2);}
+::-webkit-scrollbar-thumb{background:rgba(0,245,255,0.3);border-radius:3px;}
+/* IMAGE GEN */
+.gen-prompt-input{width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(191,0,255,0.3);border-radius:8px;color:var(--text);padding:10px 14px;font-family:'Exo 2',sans-serif;font-size:13px;resize:vertical;min-height:72px;margin-bottom:10px;}
+.gen-prompt-input:focus{outline:none;border-color:var(--purple);}
+.gen-btn{padding:11px 22px;background:linear-gradient(135deg,rgba(191,0,255,0.2),rgba(0,245,255,0.1));border:1px solid var(--purple);border-radius:8px;color:var(--purple);font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all 0.25s;}
+.gen-btn:hover{background:rgba(191,0,255,0.25);box-shadow:0 0 16px rgba(191,0,255,0.3);}
+.gen-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.img-bubble img{width:100%;max-width:420px;display:block;border-radius:10px;border:1px solid rgba(191,0,255,0.3);margin-top:8px;}
+.img-save-btn{margin-top:8px;padding:7px 14px;background:rgba(57,255,20,0.1);border:1px solid var(--green);border-radius:6px;color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
+.img-save-btn:hover{background:rgba(57,255,20,0.2);}
+
+/* GRID BG */
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 20%,#0d1a3a,#020817 60%),
+    linear-gradient(rgba(0,245,255,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,245,255,0.02) 1px,transparent 1px);
+  background-size:100% 100%,40px 40px,40px 40px;}
+
+/* CLASSROOM SYNC OVERLAY */
+#classroom-overlay{position:fixed;inset:0;z-index:800;background:rgba(2,8,23,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;backdrop-filter:blur(6px);transition:opacity 0.5s;}
+#classroom-overlay.co-hidden{opacity:0;pointer-events:none;}
+.co-avatar{width:80px;height:80px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover;animation:co-pulse 2.5s ease-in-out infinite;}
+@keyframes co-pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,245,255,0.4);}50%{box-shadow:0 0 0 14px rgba(0,245,255,0);}}
+.co-title{font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:700;color:var(--cyan);text-align:center;letter-spacing:3px;}
+.co-sub{font-size:14px;color:var(--dim);text-align:center;max-width:420px;line-height:1.7;}
+.co-badge{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(0,245,255,0.4);margin-top:8px;}
+/* Slide 3 task card */
+#co-slide3-card{display:none;background:rgba(191,0,255,0.1);border:1px solid rgba(191,0,255,0.4);border-radius:14px;padding:18px 22px;max-width:500px;text-align:center;}
+#co-slide3-card .co-title{color:var(--purple);font-size:1.3rem;}
+/* Unlock animation */
+#co-unlock-badge{display:none;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:4px;color:var(--green);border:1px solid var(--green);padding:8px 20px;border-radius:6px;animation:co-blink 1s step-end infinite;}
+@keyframes co-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.key-overlay{position:fixed;inset:0;background:rgba(2,8,23,0.95);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.key-modal{background:var(--dark2);border:1px solid rgba(0,245,255,0.3);border-radius:18px;padding:40px 44px;max-width:480px;width:90%;text-align:center;position:relative;}
+.key-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);border-radius:18px 18px 0 0;}
+.key-modal h2{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--cyan),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.key-modal p{font-size:13px;color:var(--dim);line-height:1.65;margin-bottom:24px;}
+.key-input{width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:var(--text);padding:12px 16px;font-family:monospace;font-size:13px;margin-bottom:16px;letter-spacing:1px;}
+.key-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 12px rgba(0,245,255,0.2);}
+.key-submit{width:100%;padding:13px;background:linear-gradient(135deg,rgba(0,245,255,0.2),rgba(191,0,255,0.2));border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:3px;cursor:pointer;transition:all 0.25s;}
+.key-submit:hover{background:rgba(0,245,255,0.25);box-shadow:0 0 20px rgba(0,245,255,0.3);}
+.key-hint{font-size:11px;color:var(--dim);margin-top:12px;line-height:1.6;}
+.key-hint a{color:var(--cyan);text-decoration:none;}
+@media(max-width:700px){
+  .zones,.prompt-stems,.two-col{grid-template-columns:1fr;}
+  .tab-content{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- API KEY GATE -->
+<div class="key-overlay" id="keyOverlay">
+  <div class="key-modal">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🔑</div>
+    <h2>Enter Your Gemini API Key</h2>
+    <p>Your key is stored only in this browser. Ask your <strong style="color:#fff;">teacher</strong> for the class OpenAI API key, or get your own at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>.</p>
+    <input class="key-input" id="keyInput" type="password" placeholder="sk-..."/>
+    <button class="key-submit" onclick="submitKey()">ACTIVATE AI CO-PILOT ▶</button>
+    <p id="keyError" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,50,50,0.12);border:1px solid rgba(255,50,50,0.4);border-radius:8px;font-size:13px;color:#ff6b6b;line-height:1.6;">⚠ That key looks incorrect. Please ask your <strong>teacher</strong> for the correct API key.</p>
+    <p class="key-hint">Already have a key saved? <a href="#" onclick="event.preventDefault();clearKey()">Clear saved key</a></p>
+  </div>
+</div>
+
+<!-- CLASSROOM SYNC OVERLAY -->
+<div id="classroom-overlay">
+  <img src="image (4).png" class="co-avatar" alt="Victoria"/>
+  <div class="co-title" id="co-title">👀 Eyes on the Board!</div>
+  <div class="co-sub" id="co-sub">Your teacher is setting the scene. Pay close attention!</div>
+  <div id="co-slide3-card">
+    <div class="co-title">🎨 Your Turn!</div>
+    <p style="font-size:13px;color:var(--dim);margin:10px 0 16px;line-height:1.7;">Generate an image of a <strong style="color:var(--purple);">Boeing 747 inside your classroom</strong> using DALL·E, then discuss: why does it look wrong?</p>
+    <button class="gen-btn" style="width:100%;" onclick="activateSlide3ImageGen()">OPEN IMAGE GENERATOR ▶</button>
+  </div>
+  <div id="co-unlock-badge">✅ FULL APP UNLOCKED</div>
+  <div class="co-badge" id="co-badge">VICTORIA THANG LONG AI · STANDING BY</div>
+</div>
+
+<!-- HEADER -->
+<div class="top-header">
+  <span class="header-date">WEDNESDAY, MARCH 25, 2026</span>
+  <span class="header-sep">|</span>
+  <span class="header-title">MATH LESSON 8-1: SOLVE PROBLEMS INVOLVING SCALE DRAWINGS</span>
+  <span class="header-sep">|</span>
+  <span class="header-date">ENVISION MATH P. 415</span>
+</div>
+
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('mission',this)">01 · MISSION BRIEFING</button>
+  <button class="tab-btn" onclick="switchTab('ai',this)">02 · AI CO-PILOT</button>
+  <button class="tab-btn" onclick="switchTab('reflection',this)">03 · IB REFLECTION</button>
+  <button class="tab-btn" onclick="switchTab('submit',this)">04 · SUBMISSION PORTAL</button>
+</nav>
+
+<!-- ═══ TAB 1: MISSION BRIEFING ═══ -->
+<div id="tab-mission" class="tab-content active">
+  <div class="section-title">West Lake Smart Community Hub</div>
+  <div class="section-sub">PHASE 0 → PROJECT BUILD</div>
+  <div class="divider"></div>
+
+  <div class="card card-gold" style="margin-bottom:20px;">
+    <div class="card-title">🎯 YOUR MISSION</div>
+    <p style="font-size:14px;line-height:1.75;">You are an <span class="hl">architectural tech firm</span>. Design a <span class="hl-gold">Smart Community Hub</span> for a <span class="hl-gold">400 m × 400 m</span> plot near <span class="hl">West Lake, Hanoi</span>. Use AI for concepts and <strong>mathematics</strong> for precise blueprinting.</p>
+  </div>
+
+  <div class="zones">
+    <div class="zone zone-1"><div style="font-size:2rem;margin-bottom:8px;">🌱</div><h4>ZONE 01</h4><p>Sustainable Community Center<br/><em>Solar-powered · Green-roofed</em></p></div>
+    <div class="zone zone-2"><div style="font-size:2rem;margin-bottom:8px;">💻</div><h4>ZONE 02</h4><p>Open-Air Tech Pavilion<br/><em>AI workstations · WiFi mesh</em></p></div>
+    <div class="zone zone-3"><div style="font-size:2rem;margin-bottom:8px;">🏞️</div><h4>ZONE 03</h4><p>Eco-Recreation Area<br/><em>Lakeside trails · Sports zones</em></p></div>
+  </div>
+
+  <!-- FINANCIAL CONSTRAINTS -->
+  <div class="card" style="border-color:rgba(255,215,0,0.55);margin-top:16px;">
+    <div class="card-title" style="color:var(--gold);">💰 FINANCIAL CONSTRAINTS — STRICTLY ENFORCED</div>
+    <div style="background:linear-gradient(135deg,rgba(255,50,50,0.12),rgba(255,215,0,0.08));border:1px solid rgba(255,50,50,0.4);border-radius:8px;padding:12px 18px;text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#ff4466;letter-spacing:2px;">MAX BUDGET: $25,000,000</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;letter-spacing:2px;">YOUR TOTAL CONSTRUCTION COST MUST NOT EXCEED THIS LIMIT</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+      <div style="background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.3);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">🌱</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--green);">ZONE 01</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--green);margin:6px 0;">$1,000</div>
+        <div style="font-size:11px;color:var(--dim);">per m²</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:4px;">Community Center</div>
+      </div>
+      <div style="background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">💻</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--cyan);">ZONE 02</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--cyan);margin:6px 0;">$500</div>
+        <div style="font-size:11px;color:var(--dim);">per m²</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:4px;">Tech Pavilion</div>
+      </div>
+      <div style="background:rgba(191,0,255,0.07);border:1px solid rgba(191,0,255,0.3);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">🏞️</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--purple);">ZONE 03</div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--purple);margin:6px 0;">$100</div>
+        <div style="font-size:11px;color:var(--dim);">per m²</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:4px;">Eco-Recreation</div>
+      </div>
+    </div>
+    <div class="formula" style="font-size:14px;line-height:2.2;">
+      Total Cost = (A<sub>1</sub> × $1,000) + (A<sub>2</sub> × $500) + (A<sub>3</sub> × $100)
+    </div>
+    <p style="font-size:12px;color:var(--dim);margin-top:10px;text-align:center;">⚠ Designs over $25M will be <strong style="color:#ff4466;">rejected</strong> by the City Council. Balance cost vs. space wisely.</p>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-title">📐 STEP-BY-STEP BUILD SEQUENCE</div>
+    <ul class="step-list">
+      <li class="step-item"><div class="step-num">1</div><span>Use the <strong>AI Co-Pilot tab</strong> to get realistic real-world dimensions (length × width in metres) for each of your 3 zones.</span></li>
+      <li class="step-item"><div class="step-num">2</div><span>Choose your <span class="hl">scale factor k</span> so the entire 400 m × 400 m plot fits neatly on your A3 grid paper. (e.g. 1 square = 10 m → k = 10)</span></li>
+      <li class="step-item"><div class="step-num">3</div><span>Write the governing equation: <span class="hl" style="font-family:monospace;font-size:15px;">y = kx</span> where <em>x</em> = drawing size (cm/squares) and <em>y</em> = real-world size (m).</span></li>
+      <li class="step-item"><div class="step-num">4</div><span>Calculate the <span class="hl">drawing dimension</span> for each zone: <strong>x = Real Dimension ÷ k</strong>. Plot all 3 zones onto your A3 paper within the 400 m boundary.</span></li>
+      <li class="step-item"><div class="step-num">5</div><span>Calculate the <span class="hl-gold">actual area</span> of each zone: <strong>Area = Real Length × Real Width</strong> (in m²). Do NOT scale up areas!</span></li>
+      <li class="step-item"><div class="step-num">6</div><span><strong style="color:#ff4466;">Mayor's Billboard Challenge:</strong> The city wants your map printed 3× bigger. What is the new scale? State it clearly.</span></li>
+      <li class="step-item"><div class="step-num">7</div><span>Prepare your <span class="hl">3-minute pitch</span> to the Hanoi City Council. You must state k, show y = kx, justify areas, and display your AI concept art.</span></li>
+    </ul>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="card card-purple">
+      <div class="card-title">📊 THE MATH MODEL</div>
+      <div class="formula">y = kx</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:8px;">
+        <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);color:var(--cyan);font-family:'Orbitron',sans-serif;width:40px;">x</td><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);color:var(--dim);">Drawing dimension (cm or squares)</td></tr>
+        <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);color:var(--purple);font-family:'Orbitron',sans-serif;">y</td><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);color:var(--dim);">Real-world dimension (metres)</td></tr>
+        <tr><td style="padding:6px 0;color:var(--gold);font-family:'Orbitron',sans-serif;">k</td><td style="padding:6px 0;color:var(--dim);">Scale factor (metres per square)</td></tr>
+      </table>
+    </div>
+    <div class="card card-gold">
+      <div class="card-title">💡 EXAMPLE SCALE</div>
+      <p style="font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:10px;">If 1 grid square = <span class="hl-gold">10 m</span>, then <strong>k = 10</strong></p>
+      <p style="font-size:13px;color:var(--text);line-height:1.7;">A 50 m structure:<br/><span class="hl" style="font-family:monospace;">x = 50 ÷ 10 = 5 squares</span></p>
+      <p style="font-size:13px;color:var(--text);line-height:1.7;margin-top:8px;">Area of 50 m × 30 m zone:<br/><span class="hl-gold" style="font-family:monospace;">Area = 50 × 30 = 1 500 m²</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 2: AI CO-PILOT ═══ -->
+<div id="tab-ai" class="tab-content">
+  <div class="section-title">AI Co-Pilot</div>
+  <div class="section-sub">POWERED BY GEMINI 1.5 FLASH</div>
+  <div class="divider"></div>
+
+  <div class="card card-purple" style="margin-bottom:16px;">
+    <div class="card-title">⚡ QUICK PROMPT STEMS — Click to copy then send</div>
+    <div class="prompt-stems">
+      <div class="stem-btn" onclick="copyAndFill(this,'Act as an urban planner. What is a realistic real-world length and width (in meters) for a [insert structure]? Do not give me area, only dimensions.')">
+        <div class="stem-label">📐 DIMENSIONS PROMPT</div>
+        "Act as an urban planner. What is a realistic real-world length and width (in meters) for a [insert structure]? Do not give me area, only dimensions."
+        <span class="copied-badge">COPIED ✓</span>
+      </div>
+      <div class="stem-btn" onclick="copyAndFill(this,'A photorealistic architectural concept rendering of a [insert structure] in Hanoi. Futuristic, eco-friendly.')">
+        <div class="stem-label">🎨 IMAGE PROMPT (paste into image AI)</div>
+        "A photorealistic architectural concept rendering of a [insert structure] in Hanoi. Futuristic, eco-friendly."
+        <span class="copied-badge">COPIED ✓</span>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--dim);">💡 For the image prompt, copy it and paste into <strong style="color:#fff;">Adobe Firefly, Bing Image Creator, or Ideogram</strong> in a new tab.</p>
+  </div>
+
+  <div class="card" style="border-color:rgba(191,0,255,0.35);margin-bottom:16px;">
+    <div class="card-title" style="color:var(--purple);">🎨 CONCEPT ART GENERATOR — DALL·E 3</div>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:10px;">Edit the prompt then click Generate. The image will appear in the chat below. Each image costs ~$0.04 on the API key.</p>
+    <textarea class="gen-prompt-input" id="genPromptInput">A photorealistic wide-angle architectural concept rendering of a sustainable community center near West Lake, Hanoi. Solar panels, green walls, futuristic eco-friendly design.</textarea>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="gen-btn" id="genBtn" onclick="generateImage()">🎨 GENERATE IMAGE</button>
+      <span id="genStatus" style="font-size:12px;color:var(--dim);"></span>
+    </div>
+  </div>
+
+  <div class="chat-wrap">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg msg-ai">
+        <div class="msg-lbl"><img src="image (4).png" class="msg-avatar" alt="Victoria"/> VICTORIA THANG LONG AI</div>
+        Hello! I'm Victoria, your AI Co-Pilot for the West Lake Smart Community Hub project. Ask me for realistic building dimensions, planning advice, or math help. What structure are you designing first?
+      </div>
+    </div>
+    <div class="typing" id="typing"><span></span><span></span><span></span></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="2" placeholder="Ask about building dimensions, scale factors, or the project..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 3: IB REFLECTION ═══ -->
+<div id="tab-reflection" class="tab-content">
+  <div class="section-title">IB Reflection Workbook</div>
+  <div class="section-sub">LESSON 8-1 · SCALE DRAWINGS</div>
+  <div class="divider"></div>
+
+  <div class="goal-badge">
+    <strong style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--gold);">🎯 LEARNING GOAL</strong><br/>
+    <span style="margin-top:6px;display:block;">I can use scale factors and proportional equations (<strong style="color:var(--cyan);">y = kx</strong>) to solve real-world scale drawing problems.</span>
+  </div>
+
+  <!-- B: THINKING TASK -->
+  <div class="card refl-section">
+    <div class="card-title" style="color:var(--purple);">B · THINKING TASK</div>
+
+    <div class="refl-label">SITUATION (HANOI CONTEXT)</div>
+    <div class="refl-q">You are looking at a competitor's blueprint for a different park near <strong style="color:var(--cyan);">Hoan Kiem Lake</strong>. The scale on their map is <strong style="color:var(--cyan);">1 cm = 10 m</strong>.</div>
+
+    <div class="refl-label" style="margin-top:14px;">TASK</div>
+    <div class="refl-q">Without doing full, step-by-step calculations, decide which of these statements must be <strong style="color:var(--green);">true</strong>. Check the boxes of the true statements and explain your logic in the Workspace below.</div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all 0.2s;font-size:13px;line-height:1.65;" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+        <input type="checkbox" name="think_s1" style="accent-color:var(--cyan);width:18px;height:18px;flex-shrink:0;margin-top:2px;"/>
+        <span><strong style="color:var(--cyan);">Statement 1:</strong> If the competitor drew the Community Center to be exactly twice as long as the Tech Pavilion on the paper, the real-world Community Center must also be exactly twice as long.</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all 0.2s;font-size:13px;line-height:1.65;" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+        <input type="checkbox" name="think_s2" style="accent-color:var(--cyan);width:18px;height:18px;flex-shrink:0;margin-top:2px;"/>
+        <span><strong style="color:var(--cyan);">Statement 2:</strong> Because the scale is 1 cm = 10 m, a 1 cm by 1 cm square drawn on the map represents an actual real-world area of exactly 10 square meters.</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all 0.2s;font-size:13px;line-height:1.65;" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
+        <input type="checkbox" name="think_s3" style="accent-color:var(--cyan);width:18px;height:18px;flex-shrink:0;margin-top:2px;"/>
+        <span><strong style="color:var(--cyan);">Statement 3:</strong> If the competitor had to redraw this exact same park on a much smaller piece of paper, their new scale factor (1 cm = k meters) would need to use a larger number for k.</span>
+      </label>
+    </div>
+
+    <div class="refl-label">WORKSPACE / REASONING</div>
+    <textarea id="rf-b-workspace" class="refl-textarea" style="min-height:100px;" placeholder="Explain your reasoning for each statement here..."></textarea>
+  </div>
+
+  <!-- C: CONSOLIDATION -->
+  <div class="card refl-section">
+    <div class="card-title" style="color:var(--green);">C · CONSOLIDATION CAPTURE</div>
+    <div class="two-col">
+      <div>
+        <div class="refl-label">WHAT WE NOTICED</div>
+        <textarea id="rf-c-noticed" class="refl-textarea" placeholder="What patterns, rules, or connections did our class discover today?"></textarea>
+      </div>
+      <div>
+        <div class="refl-label">COMMON MISTAKES TO AVOID</div>
+        <textarea id="rf-c-mistakes" class="refl-textarea" placeholder="e.g. Scaling area directly by k instead of using real dimensions..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="refl-label" style="color:var(--gold);">💰 BUDGET &amp; SCALE TRADE-OFF</div>
+      <textarea id="rf-c-budget" class="refl-textarea" style="min-height:80px;border-color:rgba(255,215,0,0.3);" placeholder="How did the $25M budget force you to change the scale or size of your original AI-generated ideas? What trade-offs did you make?"></textarea>
+    </div>
+    </div>
+  </div>
+
+  <!-- D: NOTES TABLE -->
+  <div class="card refl-section">
+    <div class="card-title" style="color:var(--cyan);">D · NOTES TO MY FUTURE FORGETFUL SELF</div>
+    <table class="notes-table">
+      <thead><tr><th>📖 VOCABULARY / DEFINITIONS</th><th>💡 BIG IDEAS / CONCEPTS</th><th>⚙ PROCEDURES / EXAMPLES</th></tr></thead>
+      <tbody>
+        <tr><td><textarea id="rf-d1a" placeholder="Scale factor (k): &#10;Proportional:&#10;Scale drawing:"></textarea></td>
+            <td><textarea id="rf-d1b" placeholder="Why must EVERY part shrink by the same ratio?&#10;&#10;What makes y = kx special?"></textarea></td>
+            <td><textarea id="rf-d1c" placeholder="Step 1: Find k = y ÷ x&#10;Step 2: Drawing size x = Real ÷ k&#10;Step 3: Area = Real L × Real W"></textarea></td></tr>
+        <tr><td><textarea id="rf-d2a" placeholder="Add more terms..."></textarea></td>
+            <td><textarea id="rf-d2b" placeholder="Connection to other topics..."></textarea></td>
+            <td><textarea id="rf-d2c" placeholder="Another worked example..."></textarea></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- E: WORKED EXAMPLE -->
+  <div class="card refl-section">
+    <div class="card-title" style="color:var(--gold);">E · WORKED EXAMPLE FROM MY BLUEPRINT</div>
+    <div class="refl-q" style="margin-bottom:12px;">Pick one of your West Lake zones. Write out the full calculation from real-world dimensions → drawing size → actual area. Annotate each step with <em>"Why this step?"</em></div>
+    <textarea id="rf-e-example" class="refl-textarea" style="min-height:160px;" placeholder="Zone name: _______________&#10;&#10;Real dimensions (from AI): __ m × __ m&#10;Scale factor k = ___&#10;&#10;Step 1: Find drawing width&#10;x = ___ ÷ ___ = ___ squares&#10;Why this step? ___&#10;&#10;Step 2: Find drawing height&#10;x = ___ ÷ ___ = ___ squares&#10;Why this step? ___&#10;&#10;Step 3: Calculate actual area&#10;Area = ___ × ___ = ___ m²&#10;Why this step? ___"></textarea>
+  </div>
+
+  <!-- F: EXIT REFLECTION -->
+  <div class="card refl-section card-purple">
+    <div class="card-title">F · EXIT REFLECTION</div>
+    <div class="refl-q">"In three weeks, what part of today will be <em>easiest to forget</em>, and how will your notes help you remember it?"</div>
+    <textarea id="rf-f-exit" class="refl-textarea" style="min-height:90px;" placeholder="Write your honest reflection here..."></textarea>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+    <button class="save-btn" onclick="saveReflection()">💾 SAVE TO BROWSER</button>
+    <button class="save-btn" style="border-color:var(--purple);color:var(--purple);background:rgba(191,0,255,0.1);" onclick="exportToPDF()">📄 EXPORT AS PDF</button>
+  </div>
+</div>
+
+<!-- ═══ TAB 4: SUBMISSION PORTAL ═══ -->
+<div id="tab-submit" class="tab-content">
+  <div class="section-title">Submission Portal</div>
+  <div class="section-sub">UPLOAD YOUR PITCH DATA</div>
+  <div class="divider"></div>
+  <div class="card card-gold" style="margin-bottom:16px;">
+    <div class="card-title">📋 SUBMISSION CHECKLIST — Must Include All Items</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--cyan);flex-shrink:0;">✦</span><span>Your chosen <strong style="color:var(--cyan);">Scale Factor k</strong> and the equation y = kx</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--cyan);flex-shrink:0;">✦</span><span>Real-world <strong style="color:var(--cyan);">dimensions</strong> (L × W in metres) for all 3 zones</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--cyan);flex-shrink:0;">✦</span><span>Calculated <strong style="color:var(--cyan);">area</strong> (m²) for each zone</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#ff4466;flex-shrink:0;">★</span><span><strong style="color:#ff4466;">Total Budget Spent</strong>: (A₁×$1,000) + (A₂×$500) + (A₃×$100) = $___</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#ff4466;flex-shrink:0;">★</span><span><strong style="color:#ff4466;">Proof</strong> your total is under the $25,000,000 limit</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--gold);flex-shrink:0;">✦</span><span>New billboard scale factor and your AI concept art</span></div>
+    </div>
+    <div style="margin-top:14px;text-align:center;">
+      <a href="https://padlet.com/vmoronu/submission-request/d1AGbWEynZqnXR7y" target="_blank" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(255,50,50,0.2),rgba(255,215,0,0.1));border:1px solid #ff4466;border-radius:8px;color:#ff4466;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;text-decoration:none;transition:all 0.25s;">🚀 SUBMIT TO PADLET ▶</a>
+    </div>
+  </div>
+  <div style="width:100%;">
+    <div class="padlet-embed" style="border:1px solid rgba(0,245,255,0.2);border-radius:10px;box-sizing:border-box;overflow:hidden;position:relative;width:100%;background:#F4F4F4"><p style="padding:0;margin:0"><iframe src="https://padlet.com/embed/grv4rhbpi6meu03r" frameborder="0" allow="camera;microphone;geolocation;display-capture;clipboard-write" style="width:100%;height:608px;display:block;padding:0;margin:0"></iframe></p><div style="display:flex;align-items:center;justify-content:end;margin:0;padding:8px 8px 8px 0"><a href="https://padlet.com?ref=embed" style="display:flex;align-items:center;gap:5px;flex-grow:0;margin:0;border:none;padding:0;text-decoration:none" target="_blank"><span aria-hidden style="color:#9E9E9E;font-size:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;line-height:1">Made with</span><img src="https://padlet.net/emails/padlet_email_logo_2026_text-dark-200.png" height="12" style="padding:0;margin:0;background:0 0;border:none;box-shadow:none;display:block" alt="Made with Padlet"></a></div></div>
+  </div>
+</div>
+
+<script>
+let API_KEY = '';
+const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+
+// ── API KEY GATE ──
+function submitKey() {
+  const val = document.getElementById('keyInput').value.trim();
+  const errEl = document.getElementById('keyError');
+  if (!val || val.length <= 10) {
+    document.getElementById('keyInput').style.borderColor = '#ff4466';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  document.getElementById('keyInput').style.borderColor = '';
+  API_KEY = val;
+  localStorage.setItem('openai_api_key', val);
+  document.getElementById('keyOverlay').style.display = 'none';
+}
+function clearKey() {
+  localStorage.removeItem('openai_api_key');
+  document.getElementById('keyInput').value = '';
+  document.getElementById('keyOverlay').style.display = 'flex';
+}
+(function initKey() {
+  const saved = localStorage.getItem('openai_api_key');
+  if (saved && saved.length > 10) { API_KEY = saved; document.getElementById('keyOverlay').style.display = 'none'; }
+  document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitKey(); });
+})();
+
+const SYSTEM_PROMPT = `You are an AI Math Co-Pilot for a Grade 7 mathematics class at a school in Hanoi, Vietnam. 
+Students are designing a "West Lake Smart Community Hub" with 3 zones on a 400m × 400m plot.
+The math topic is scale drawings and proportional reasoning (y = kx, where k is the scale factor).
+Keep responses concise, encouraging, and educational. When giving building dimensions, always specify realistic length × width in metres.
+If asked about scale factor, guide students to calculate it themselves using y = kx.`;
+
+let chatHistory = [
+  { role: 'system', content: SYSTEM_PROMPT }
+];
+
+// ── TAB SWITCHING ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── COPY PROMPT STEM ──
+function copyAndFill(el, text) {
+  navigator.clipboard.writeText(text).catch(() => {});
+  document.getElementById('chatInput').value = text;
+  const badge = el.querySelector('.copied-badge');
+  badge.style.display = 'block';
+  setTimeout(() => { badge.style.display = 'none'; }, 2200);
+  switchTab('ai', document.querySelectorAll('.tab-btn')[1]);
+}
+
+// ── CHAT ──
+function addMessage(text, role) {
+  const box = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  div.innerHTML = `<div class="msg-lbl">${role === 'ai' ? '<img src="image (4).png" class="msg-avatar" alt="Victoria"/> VICTORIA THANG LONG AI' : '👤 YOU'}</div>${escHtml(text)}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br/>');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const btn = document.getElementById('sendBtn');
+  const msg = input.value.trim();
+  if (!msg) return;
+  if (!API_KEY) { document.getElementById('keyOverlay').style.display = 'flex'; return; }
+
+  addMessage(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+  input.value = '';
+  btn.disabled = true;
+
+  const typing = document.getElementById('typing');
+  typing.style.display = 'flex';
+  document.getElementById('chatMessages').scrollTop = 9999;
+
+  try {
+    const res = await fetch(OPENAI_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: chatHistory,
+        max_tokens: 500,
+        temperature: 0.7,
+        prompt: {
+          id: 'pmpt_69c30ca059948190835a0f278a628d3b0b9a52d6d1b3c020',
+          version: '1'
+        }
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+    const reply = data.choices?.[0]?.message?.content;
+    if (!reply) throw new Error('Empty response. Please ask your teacher for help.');
+    chatHistory.push({ role: 'assistant', content: reply });
+    typing.style.display = 'none';
+    addMessage(reply, 'ai');
+  } catch (err) {
+    typing.style.display = 'none';
+    addMessage(`⚠ ${err.message}`, 'ai');
+  }
+  btn.disabled = false;
+}
+
+// ── IMAGE GENERATION ──
+async function generateImage() {
+  if (!API_KEY) { document.getElementById('keyOverlay').style.display = 'flex'; return; }
+  const prompt = document.getElementById('genPromptInput').value.trim();
+  if (!prompt) return;
+  const btn = document.getElementById('genBtn');
+  const status = document.getElementById('genStatus');
+  btn.disabled = true;
+  status.textContent = '⌛ Generating… (~15 sec)';
+
+  const box = document.getElementById('chatMessages');
+  const loadDiv = document.createElement('div');
+  loadDiv.className = 'msg msg-ai'; loadDiv.id = 'imgLoading';
+  loadDiv.innerHTML = `<div class="msg-lbl"><img src="image (4).png" class="msg-avatar" alt="Victoria"/> VICTORIA THANG LONG AI</div>🎨 Generating your concept art… please wait.`;
+  box.appendChild(loadDiv); box.scrollTop = box.scrollHeight;
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+    const imgUrl = data.data[0].url;
+    document.getElementById('imgLoading')?.remove();
+
+    const ts = Date.now();
+    const imgDiv = document.createElement('div');
+    imgDiv.className = 'msg msg-ai';
+    imgDiv.innerHTML = `
+      <div class="msg-lbl"><img src="image (4).png" class="msg-avatar" alt="Victoria"/> VICTORIA THANG LONG AI</div>
+      Here's your concept art! 🏗️
+      <div class="img-bubble">
+        <img src="${imgUrl}" alt="AI Generated Architecture"/>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="img-save-btn" onclick="saveImage('${imgUrl}','victoria-art-${ts}.png')">&#x1F4BE; SAVE IMAGE</button>
+          <button class="img-save-btn" style="border-color:var(--cyan);color:var(--cyan);" onclick="window.open('${imgUrl}','_blank')">&#x1F517; OPEN FULL SIZE</button>
+        </div>
+      </div>`;
+    box.appendChild(imgDiv); box.scrollTop = box.scrollHeight;
+    status.textContent = '✓ Done!'; setTimeout(() => status.textContent = '', 3000);
+  } catch(err) {
+    document.getElementById('imgLoading')?.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'msg msg-ai';
+    errDiv.innerHTML = `<div class="msg-lbl"><img src="image (4).png" class="msg-avatar" alt="Victoria"/> VICTORIA THANG LONG AI</div>⚠ ${escHtml(err.message)}`;
+    box.appendChild(errDiv); box.scrollTop = box.scrollHeight;
+    status.textContent = '';
+  }
+  btn.disabled = false;
+}
+
+async function saveImage(url, filename) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
+// ── PDF EXPORT ──
+async function exportToPDF() {
+  if (!window.jspdf) { alert('PDF library not loaded. Please check your internet connection.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const PW = 210, PH = 297, M = 14, CW = PW - M * 2;
+  let y = 0;
+
+  // Load avatar image
+  let avatarDataUrl = null;
+  try {
+    const img = new Image();
+    img.src = 'image (4).png';
+    await new Promise(r => { img.onload = r; img.onerror = r; });
+    const cv = document.createElement('canvas');
+    cv.width = img.naturalWidth || 100; cv.height = img.naturalHeight || 100;
+    cv.getContext('2d').drawImage(img, 0, 0);
+    avatarDataUrl = cv.toDataURL('image/png');
+  } catch(e) {}
+
+  const g = (id) => document.getElementById(id)?.value?.trim() || '';
+
+  function newPage() { doc.addPage(); y = M; }
+  function chk(need = 20) { if (y + need > PH - M - 5) newPage(); }
+
+  function hdr(label, rgb) {
+    chk(12);
+    doc.setFillColor(...rgb);
+    doc.rect(M, y, CW, 7.5, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(label, M + 3, y + 5.2);
+    doc.setTextColor(20, 20, 30);
+    y += 11;
+  }
+
+  function txt(content, indent, fs, bold, color) {
+    if (!content) return;
+    doc.setFontSize(fs || 9);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setTextColor(...(color || [20, 20, 30]));
+    const lines = doc.splitTextToSize(content, CW - indent);
+    chk(lines.length * 5 + 3);
+    doc.text(lines, M + indent, y);
+    y += lines.length * 5 + 2;
+  }
+
+  function box(content, bgRgb, borderRgb) {
+    const lines = doc.splitTextToSize(content || '(blank)', CW - 6);
+    const bh = lines.length * 5 + 6;
+    chk(bh + 4);
+    doc.setFillColor(...(bgRgb || [245, 248, 255]));
+    doc.rect(M, y, CW, bh, 'F');
+    doc.setDrawColor(...(borderRgb || [180, 200, 230]));
+    doc.rect(M, y, CW, bh);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 20, 30);
+    doc.text(lines, M + 3, y + 4.5);
+    y += bh + 4;
+  }
+
+  // ── COVER HEADER ──
+  doc.setFillColor(2, 8, 23);
+  doc.rect(0, 0, PW, 32, 'F');
+  doc.setFillColor(0, 245, 255);
+  doc.rect(0, 32, PW, 1.5, 'F');
+  doc.setFillColor(191, 0, 255);
+  doc.rect(0, 33.5, PW, 0.5, 'F');
+
+  doc.setFontSize(17); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 245, 255);
+  doc.text('IB Reflection Workbook', M, 13);
+  if (avatarDataUrl) doc.addImage(avatarDataUrl, 'PNG', PW - 36, 4, 24, 24);
+
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.setTextColor(160, 170, 200);
+  doc.text('MATH LESSON 8-1: Solve Problems Involving Scale Drawings  \u00b7  Envision Math p.415', M, 20);
+  doc.text('Wednesday, March 25, 2026', M, 26);
+
+  // Learning goal badge
+  y = 40;
+  doc.setFillColor(0, 30, 50);
+  doc.rect(M, y, CW, 10, 'F');
+  doc.setDrawColor(0, 180, 220);
+  doc.rect(M, y, 3, 10, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 200, 240);
+  doc.text('LEARNING GOAL', M + 5, y + 4);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 220, 240);
+  doc.text('I can use scale factors and proportional equations (y = kx) to solve real-world scale drawing problems.', M + 5, y + 8.5);
+  y += 16;
+
+  // ── B: THINKING TASK ──
+  hdr('B \u00b7 THINKING TASK', [130, 0, 180]);
+  txt('Situation: Competitor\u2019s blueprint for a park near Hoan Kiem Lake. Scale: 1 cm = 10 m.', 0, 9, false, [50, 50, 70]);
+  txt('Task: Check which statements must be true.', 0, 9, true, [20, 20, 30]);
+  y += 2;
+
+  const stmts = [
+    { n:'think_s1', label:'Statement 1', t:'If the competitor drew the Community Center twice as long as the Tech Pavilion on paper, the real Community Center must also be exactly twice as long.' },
+    { n:'think_s2', label:'Statement 2', t:'Because scale is 1 cm = 10 m, a 1 cm \u00d7 1 cm square on the map represents exactly 10 m\u00b2 in real life.' },
+    { n:'think_s3', label:'Statement 3', t:'If redrawn on a smaller piece of paper, the new scale factor k would need to use a larger number.' },
+  ];
+  stmts.forEach(s => {
+    const checked = document.querySelector(`input[name="${s.n}"]`)?.checked;
+    chk(14);
+    doc.setFontSize(12);
+    doc.setTextColor(checked ? 0 : 120, checked ? 150 : 120, checked ? 30 : 125);
+    doc.text(checked ? '\u2611' : '\u2610', M + 2, y);
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 120, 180);
+    doc.text(s.label + ':', M + 10, y);
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
+    const lines = doc.splitTextToSize(s.t, CW - 42);
+    doc.text(lines, M + 38, y);
+    y += Math.max(lines.length * 5, 6) + 3;
+  });
+  y += 2;
+  txt('Workspace / Reasoning:', 0, 9, true); box(g('rf-b-workspace'));
+
+  // ── C: CONSOLIDATION ──
+  hdr('C \u00b7 CONSOLIDATION CAPTURE', [0, 130, 100]);
+  txt('What We Noticed:', 0, 9, true); box(g('rf-c-noticed'));
+  txt('Common Mistakes to Avoid:', 0, 9, true); box(g('rf-c-mistakes'));
+
+  // ── D: NOTES TABLE ──
+  hdr('D \u00b7 NOTES TO MY FUTURE FORGETFUL SELF', [20, 80, 150]);
+  const dCols = ['Vocabulary / Definitions', 'Big Ideas / Concepts', 'Procedures / Examples'];
+  const dData = [
+    [g('rf-d1a'), g('rf-d1b'), g('rf-d1c')],
+    [g('rf-d2a'), g('rf-d2b'), g('rf-d2c')],
+  ];
+  const colW = CW / 3;
+  dCols.forEach((col, i) => {
+    doc.setFillColor(10, 50, 90); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.setTextColor(0, 200, 240);
+    doc.rect(M + i * colW, y, colW, 7, 'F');
+    doc.text(col, M + i * colW + 2, y + 4.8);
+  });
+  y += 8;
+  dData.forEach(row => {
+    const maxLines = Math.max(...row.map(c => doc.splitTextToSize(c || '-', colW - 4).length));
+    const rh = maxLines * 5 + 6;
+    chk(rh + 2);
+    row.forEach((cell, i) => {
+      doc.setDrawColor(150, 170, 200);
+      doc.rect(M + i * colW, y, colW, rh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+      doc.setTextColor(30, 30, 30);
+      const ls = doc.splitTextToSize(cell || '-', colW - 4);
+      doc.text(ls, M + i * colW + 2, y + 4.5);
+    });
+    y += rh;
+  });
+  y += 6;
+
+  // ── E: WORKED EXAMPLE ──
+  hdr('E \u00b7 WORKED EXAMPLE FROM MY BLUEPRINT', [160, 100, 0]);
+  box(g('rf-e-example'), [255, 250, 235], [200, 160, 0]);
+
+  // ── F: EXIT REFLECTION ──
+  hdr('F \u00b7 EXIT REFLECTION', [100, 0, 140]);
+  txt('"In three weeks, what part of today will be easiest to forget, and how will your notes help?"', 0, 8, false, [80, 0, 110]);
+  y += 2;
+  box(g('rf-f-exit'), [250, 240, 255], [150, 0, 200]);
+
+  // Footer on all pages
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(2, 8, 23);
+    doc.rect(0, PH - 10, PW, 10, 'F');
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 110, 140);
+    doc.text('West Lake Smart Community Hub | Math 8-1 | Victoria Thang Long AI', M, PH - 4);
+    doc.text(`Page ${p} of ${totalPages}`, PW - M, PH - 4, { align: 'right' });
+  }
+
+  doc.save(`IB-Reflection-8-1-${Date.now()}.pdf`);
+}
+
+// ── CLASSROOM SYNC ──
+const SLIDE_CONFIG = {
+  1:  { title:'🏙️ Mission Briefing', sub:'Your teacher is introducing the West Lake Smart Hub. Listen carefully!', badge:'LESSON INTRODUCTION', tab:null },
+  2:  { title:'🗺️ The Hanoi Mission', sub:'Follow along — your teacher is explaining the 400 m × 400 m challenge site.', badge:'MISSION CONTEXT', tab:null },
+  3:  { title:null, sub:null, badge:null, tab:'ai', special:'slide3' },
+  4:  { title:'🔍 Scale Investigation!', sub:'Watch how your teacher finds the scale factor. This is the key maths — don’t miss it!', badge:'SCALE DISCOVERY', tab:null },
+  5:  { title:'🤖 Watch & Learn', sub:'Your teacher is demonstrating the AI tools and blueprint workflow.', badge:'AI TOOLS DEMO', tab:null },
+  6:  { title:'🏗️ Zone Planning', sub:'Listen carefully — your teacher is explaining the three mandatory zones.', badge:'ZONE BRIEF', tab:null },
+  7:  { title:'📐 Math Mandate!', sub:'Pay close attention to the scale factor formula. You’ll need this for your blueprint.', badge:'SCALE FACTOR FORMULA', tab:null },
+  8:  { title:'🧠 Billboard Challenge!', sub:'Watch how the scaling changes when you resize the whole map. Key insight ahead!', badge:'ADVANCED SCALING', tab:null },
+  9:  { title:null, sub:null, badge:null, tab:null, special:'unlock' },
+  10: { title:null, sub:null, badge:null, tab:null, special:'unlock' },
+};
+
+function handleClassroomSlide(slide) {
+  const cfg = SLIDE_CONFIG[slide] || SLIDE_CONFIG[1];
+  const overlay = document.getElementById('classroom-overlay');
+  const title = document.getElementById('co-title');
+  const sub = document.getElementById('co-sub');
+  const badge = document.getElementById('co-badge');
+  const s3Card = document.getElementById('co-slide3-card');
+  const unlockBadge = document.getElementById('co-unlock-badge');
+
+  // Reset special elements
+  s3Card.style.display = 'none';
+  unlockBadge.style.display = 'none';
+  title.style.display = 'block';
+  sub.style.display = 'block';
+
+  if (cfg.special === 'slide3') {
+    // Show overlay with Slide 3 task card
+    overlay.classList.remove('co-hidden');
+    title.style.display = 'none'; sub.style.display = 'none';
+    s3Card.style.display = 'block';
+    badge.textContent = 'SLIDE 3 · REALITY CHECK';
+  } else if (cfg.special === 'unlock') {
+    // Unlock full app
+    overlay.classList.add('co-hidden');
+    unlockBadge.style.display = 'block';
+    setTimeout(() => unlockBadge.style.display = 'none', 4000);
+  } else {
+    overlay.classList.remove('co-hidden');
+    title.textContent = cfg.title;
+    sub.textContent = cfg.sub;
+    badge.textContent = (cfg.badge || '') + ' · VICTORIA THANG LONG AI';
+  }
+}
+
+function activateSlide3ImageGen() {
+  const overlay = document.getElementById('classroom-overlay');
+  overlay.classList.add('co-hidden');
+  // Switch to AI tab
+  switchTab('ai', document.querySelectorAll('.tab-btn')[1]);
+  // Pre-fill the DALL·E prompt
+  const genInput = document.getElementById('genPromptInput');
+  if (genInput) genInput.value = 'A photorealistic image of a life-sized Boeing 747 aircraft impossibly parked inside a standard 7th-grade classroom. The plane is enormous, its wings smashing through the walls, students look shocked.';
+  // Scroll to image generator
+  document.getElementById('genBtn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Start listening
+if (window.victoriaSync) {
+  victoriaSync.onSlideChange(handleClassroomSlide);
+} else {
+  // If classroom-sync not loaded, default to full app
+  document.getElementById('classroom-overlay').classList.add('co-hidden');
+}
+function saveReflection() {
+  const data = {};
+  document.querySelectorAll('#tab-reflection textarea').forEach((ta, i) => data[`field_${i}`] = ta.value);
+  const radio = document.querySelector('input[name="train"]:checked');
+  data.thinkingTask = radio ? radio.value : '';
+  localStorage.setItem('ib_reflection_8_1', JSON.stringify(data));
+  alert('✅ Reflection saved to this browser! (local storage)');
+}
+
+// Load saved on open
+(function loadSaved() {
+  const saved = localStorage.getItem('ib_reflection_8_1');
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    document.querySelectorAll('#tab-reflection textarea').forEach((ta, i) => {
+      if (data[`field_${i}`]) ta.value = data[`field_${i}`];
+    });
+    if (data.thinkingTask) {
+      const r = document.querySelector(`input[name="train"][value="${data.thinkingTask}"]`);
+      if (r) r.checked = true;
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The West Lake Smart Community Hub | AI in Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<script src="classroom-sync.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --neon-cyan: #00f5ff;
+    --neon-purple: #bf00ff;
+    --neon-green: #39ff14;
+    --neon-gold: #ffd700;
+    --dark: #020817;
+    --dark2: #0a1628;
+    --dark3: #0f2044;
+    --glass: rgba(255,255,255,0.05);
+    --glass-border: rgba(0,245,255,0.2);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+  }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── SLIDE SYSTEM ── */
+  .slide-container { position: relative; width: 100%; height: 100vh; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px 64px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.7s ease, transform 0.7s ease;
+    transform: translateX(60px);
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+  .slide.exit { opacity: 0; transform: translateX(-60px); }
+
+  /* ── SHARED BACKGROUND GRID ── */
+  .slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ── SLIDE-SPECIFIC GRADIENTS ── */
+  .slide-1 { background: radial-gradient(ellipse at 60% 40%, #0d2a4a 0%, #020817 70%); }
+  .slide-2 { background: radial-gradient(ellipse at 30% 60%, #1a0a2e 0%, #020817 70%); }
+  .slide-3 { background: radial-gradient(ellipse at 45% 55%, #2a0505 0%, #020817 70%); }
+  .slide-4 { background: radial-gradient(ellipse at 55% 40%, #1a1400 0%, #020817 70%); }
+  .slide-5 { background: radial-gradient(ellipse at 70% 30%, #0a1f0a 0%, #020817 70%); }
+  .slide-6 { background: radial-gradient(ellipse at 50% 50%, #1a0d2e 0%, #020817 70%); }
+  .slide-7 { background: radial-gradient(ellipse at 20% 70%, #0d1a2a 0%, #020817 70%); }
+  .slide-8 { background: radial-gradient(ellipse at 80% 20%, #1a0a1a 0%, #020817 70%); }
+  .slide-9 { background: radial-gradient(ellipse at 50% 40%, #0d2a1a 0%, #020817 70%); }
+  .slide-10 { background: radial-gradient(ellipse at 50% 50%, #0a0a2a 0%, #020817 70%); }
+  .slide-11 { background: radial-gradient(ellipse at 50% 50%, #0a1a0a 0%, #020817 70%); }
+
+  /* ── PARTICLES ── */
+  .particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .particle {
+    position: absolute; border-radius: 50%;
+    animation: float linear infinite;
+    opacity: 0.4;
+  }
+  @keyframes float {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-20px) rotate(720deg); opacity: 0; }
+  }
+
+  /* ── SLIDE NUMBER & NAV ── */
+  .slide-num {
+    position: fixed; top: 24px; right: 32px;
+    font-family: 'Orbitron', sans-serif; font-size: 13px;
+    color: var(--neon-cyan); letter-spacing: 3px; z-index: 100;
+  }
+  .progress-bar {
+    position: fixed; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+    transition: width 0.6s ease; z-index: 100;
+    box-shadow: 0 0 12px var(--neon-cyan);
+  }
+  .nav-btn {
+    position: fixed; bottom: 28px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    color: var(--neon-cyan); padding: 12px 32px; border-radius: 50px;
+    font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 2px;
+    cursor: pointer; z-index: 100; backdrop-filter: blur(10px);
+    transition: all 0.3s;
+  }
+  .nav-btn:hover { background: rgba(0,245,255,0.15); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
+  .nav-prev { left: 32px; }
+  .nav-next { right: 32px; }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── SLIDE 1: TITLE ── */
+  .s1-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 4rem);
+    font-weight: 900; text-align: center; line-height: 1.1;
+    background: linear-gradient(135deg, var(--neon-cyan), #ffffff, var(--neon-purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 16px;
+    animation: glow-pulse 3s ease-in-out infinite alternate;
+  }
+  @keyframes glow-pulse {
+    from { filter: drop-shadow(0 0 8px rgba(0,245,255,0.5)); }
+    to   { filter: drop-shadow(0 0 24px rgba(191,0,255,0.7)); }
+  }
+  .s1-sub {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1rem, 2vw, 1.5rem);
+    color: var(--neon-gold); letter-spacing: 6px; text-align: center;
+    margin-bottom: 40px;
+  }
+  .s1-skyline {
+    width: 100%; max-width: 820px; height: 180px; position: relative; margin-top: 16px;
+  }
+  .s1-label {
+    font-size: 11px; letter-spacing: 3px; color: var(--text-dim);
+    text-align: center; margin-top: 12px;
+    font-family: 'Orbitron', sans-serif;
+  }
+  .badge {
+    display: inline-block; padding: 6px 20px; border-radius: 50px;
+    border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+    font-size: 12px; letter-spacing: 3px; font-family: 'Orbitron', sans-serif;
+    margin-bottom: 24px; background: rgba(0,245,255,0.07);
+  }
+
+  /* ── HEADINGS ── */
+  .slide-headline {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.4rem);
+    font-weight: 700; text-align: center; margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--neon-cyan), #ffffff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide-sub-headline {
+    font-size: 13px; letter-spacing: 4px; color: var(--neon-purple);
+    text-align: center; margin-bottom: 36px; font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+  }
+
+  /* ── GLASS CARDS ── */
+  .glass-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 24px 32px; backdrop-filter: blur(12px);
+    position: relative; overflow: hidden;
+  }
+  .glass-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+  }
+
+  /* ── SLIDE 2 layout ── */
+  .s2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 960px; }
+  .s2-body { font-size: 15px; line-height: 1.7; color: var(--text); }
+  .s2-task-box {
+    background: linear-gradient(135deg, rgba(191,0,255,0.12), rgba(0,245,255,0.08));
+    border: 1px solid var(--neon-purple); border-radius: 12px; padding: 20px 24px;
+  }
+  .s2-task-label {
+    font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 3px;
+    color: var(--neon-purple); margin-bottom: 10px;
+  }
+  .highlight { color: var(--neon-cyan); font-weight: 700; }
+  .highlight-gold { color: var(--neon-gold); font-weight: 700; }
+
+  /* ── SLIDE 3 layout ── */
+  .s3-tools { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 860px; }
+  .tool-card {
+    display: flex; align-items: flex-start; gap: 20px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 14px; padding: 20px 28px; backdrop-filter: blur(10px);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .tool-card:hover {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 20px rgba(57,255,20,0.15);
+  }
+  .tool-icon {
+    font-size: 2.4rem; flex-shrink: 0;
+    filter: drop-shadow(0 0 8px var(--neon-green));
+  }
+  .tool-title {
+    font-family: 'Orbitron', sans-serif; font-size: 14px; color: var(--neon-green);
+    margin-bottom: 6px; letter-spacing: 2px;
+  }
+  .tool-body { font-size: 14px; line-height: 1.65; color: var(--text-dim); }
+  
+  /* ── PROMPT BLOCK ── */
+  .prompt-block {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-left: 3px solid;
+    border-radius: 4px 8px 8px 4px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .prompt-green { border-color: var(--neon-green); color: var(--neon-green); }
+  .prompt-cyan { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
+  /* ── SLIDE 4 zones ── */
+  .zones-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 960px; }
+  .zone-card {
+    background: var(--glass); border-radius: 18px; padding: 32px 20px; text-align: center;
+    backdrop-filter: blur(10px); position: relative; overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .zone-card:hover { transform: translateY(-6px); }
+  .zone-card:nth-child(1) { border: 1px solid var(--neon-green); }
+  .zone-card:nth-child(1):hover { box-shadow: 0 12px 40px rgba(57,255,20,0.2); }
+  .zone-card:nth-child(2) { border: 1px solid var(--neon-cyan); }
+  .zone-card:nth-child(2):hover { box-shadow: 0 12px 40px rgba(0,245,255,0.2); }
+  .zone-card:nth-child(3) { border: 1px solid var(--neon-purple); }
+  .zone-card:nth-child(3):hover { box-shadow: 0 12px 40px rgba(191,0,255,0.2); }
+  .zone-icon { font-size: 3.2rem; margin-bottom: 16px; display: block; }
+  .zone-num {
+    font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 3px;
+    color: var(--text-dim); margin-bottom: 8px;
+  }
+  .zone-title {
+    font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+    line-height: 1.4;
+  }
+  .zone-card:nth-child(1) .zone-title { color: var(--neon-green); }
+  .zone-card:nth-child(2) .zone-title { color: var(--neon-cyan); }
+  .zone-card:nth-child(3) .zone-title { color: var(--neon-purple); }
+
+  /* ── SLIDES 5 & 6 math ── */
+  .math-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 960px; }
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 14px; line-height: 1.6; color: var(--text); margin-bottom: 14px;
+  }
+  .check-icon {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+    background: rgba(0,245,255,0.1); border: 1px solid var(--neon-cyan);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--neon-cyan);
+  }
+  .math-formula {
+    background: rgba(0,245,255,0.06); border: 1px solid rgba(0,245,255,0.3);
+    border-radius: 10px; padding: 14px 20px; text-align: center; margin-top: 12px;
+    font-family: 'Orbitron', sans-serif; font-size: 16px; color: var(--neon-cyan);
+    letter-spacing: 2px;
+  }
+  .task-row {
+    display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start;
+  }
+  .task-num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: #000;
+  }
+  .task-text { font-size: 14px; line-height: 1.65; color: var(--text); }
+
+  /* ── SLIDE 7 pitch ── */
+  .pitch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 960px; }
+  .req-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 16px 20px; backdrop-filter: blur(8px);
+    margin-bottom: 14px;
+  }
+  .req-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .req-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+  .timer-box {
+    background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04));
+    border: 2px solid var(--neon-gold); border-radius: 16px; padding: 28px;
+    text-align: center;
+  }
+  .timer-num {
+    font-family: 'Orbitron', sans-serif; font-size: 4rem; font-weight: 900;
+    color: var(--neon-gold); text-shadow: 0 0 30px rgba(255,215,0,0.6);
+    line-height: 1;
+  }
+  .timer-label {
+    font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 4px;
+    color: var(--neon-gold); margin-top: 8px; opacity: 0.7;
+  }
+
+  /* ── DECORATIVE SVG lines ── */
+  .corner-tl, .corner-br {
+    position: absolute; width: 40px; height: 40px;
+    border-color: var(--neon-cyan); border-style: solid; opacity: 0.4;
+  }
+  .corner-tl { top: 20px; left: 24px; border-width: 2px 0 0 2px; }
+  .corner-br { bottom: 20px; right: 24px; border-width: 0 2px 2px 0; }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    margin: 0 auto 28px;
+  }
+
+  /* ── KEYBOARD HINT ── */
+  .key-hint {
+    position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; letter-spacing: 2px; color: var(--text-dim); z-index: 99;
+    font-family: 'Orbitron', sans-serif; opacity: 0.6;
+  }
+
+  /* ── ANIMATED SCAN LINE ── */
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.4), transparent);
+    animation: scan 6s linear infinite; pointer-events: none;
+  }
+  @keyframes scan { from { top: -2px; } to { top: 100%; } }
+
+  /* ── PHASE 0: INQUIRY SLIDES ── */
+  .rc-split { display:grid; grid-template-columns:1fr 1fr; gap:22px; width:100%; max-width:960px; }
+  .ai-prompt-box {
+    margin:10px 0; padding:14px 16px;
+    background:rgba(0,0,0,0.5); border-left:3px solid var(--neon-purple);
+    border-radius:4px 10px 10px 4px; font-family:monospace; font-size:13px;
+    color:var(--neon-purple); line-height:1.65;
+  }
+  .glitch-box {
+    border:1px solid rgba(255,60,60,0.4); border-radius:10px;
+    overflow:hidden; background:rgba(25,5,5,0.6); padding:8px;
+  }
+  .inquiry-q {
+    margin-top:16px; padding:14px 26px; width:100%; max-width:960px;
+    text-align:center; font-size:15px; color:var(--neon-cyan); line-height:1.75;
+    background:rgba(0,245,255,0.05); border:1px solid rgba(0,245,255,0.25);
+    border-radius:14px; animation: glow-pulse 3s ease-in-out infinite alternate;
+  }
+  .discover-btn {
+    padding:13px 20px; background:rgba(0,245,255,0.07);
+    border:1px solid var(--neon-cyan); border-radius:10px;
+    font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:2px;
+    color:var(--neon-cyan); cursor:pointer; text-align:center; transition:all 0.3s;
+  }
+  .discover-btn:hover { background:rgba(0,245,255,0.18); box-shadow:0 0 20px rgba(0,245,255,0.3); }
+  .discover-reveal {
+    flex-direction:column; background:rgba(0,245,255,0.06);
+    border:1px solid rgba(0,245,255,0.3); border-radius:12px; padding:18px 22px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE COUNTER -->
+<div class="slide-num" id="slideNum">01 / 11</div>
+<div class="progress-bar" id="progressBar" style="width:11.1%"></div>
+
+<button class="nav-btn nav-prev" id="prevBtn" onclick="changeSlide(-1)" disabled>◀ PREV</button>
+<button class="nav-btn nav-next" id="nextBtn" onclick="changeSlide(1)">NEXT ▶</button>
+
+<div class="slide-container">
+
+  <!-- ══════════════ SLIDE 1 ══════════════ -->
+  <div class="slide slide-1 active" id="slide-0">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p0"></div>
+
+    <div class="badge">GRADE 7 MATHEMATICS · AI IN ARCHITECTURE</div>
+    <div class="s1-title">The West Lake<br/>Smart Community Hub</div>
+    <div class="s1-sub">AI CONCEPT. HUMAN MATHEMATICS.</div>
+    <div class="section-divider"></div>
+
+    <!-- SVG Skyline -->
+    <svg class="s1-skyline" viewBox="0 0 820 180" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#020817" stop-opacity="0.8"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0a1628"/>
+          <stop offset="100%" stop-color="#020817"/>
+        </linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- Sky -->
+      <rect width="820" height="130" fill="url(#skyGrad)"/>
+      <!-- Stars -->
+      <circle cx="50" cy="20" r="1" fill="#fff" opacity="0.6"/>
+      <circle cx="120" cy="10" r="1.5" fill="#fff" opacity="0.8"/>
+      <circle cx="230" cy="30" r="1" fill="#fff" opacity="0.5"/>
+      <circle cx="500" cy="15" r="1" fill="#fff" opacity="0.7"/>
+      <circle cx="700" cy="25" r="2" fill="#00f5ff" opacity="0.9"/>
+      <circle cx="780" cy="8" r="1" fill="#fff" opacity="0.6"/>
+      <!-- Moon -->
+      <circle cx="760" cy="30" r="14" fill="#1a2d50"/>
+      <circle cx="753" cy="26" r="12" fill="#0a1628"/>
+      <!-- Buildings -->
+      <rect x="30" y="80" width="40" height="50" fill="#0d2a4a" stroke="#00f5ff" stroke-width="0.5"/>
+      <rect x="35" y="85" width="8" height="8" fill="#00f5ff" opacity="0.3"/>
+      <rect x="50" y="88" width="8" height="8" fill="#bf00ff" opacity="0.4"/>
+      <rect x="80" y="60" width="30" height="70" fill="#0a1f3d" stroke="#00f5ff" stroke-width="0.5"/>
+      <rect x="84" y="65" width="8" height="8" fill="#00f5ff" opacity="0.5"/>
+      <rect x="84" y="78" width="8" height="8" fill="#00f5ff" opacity="0.3"/>
+      <!-- Central Tall Tower -->
+      <polygon points="380,10 370,40 390,40" fill="#00f5ff" opacity="0.6" filter="url(#glow)"/>
+      <rect x="365" y="40" width="50" height="90" fill="#0d2a4a" stroke="#00f5ff" stroke-width="1"/>
+      <rect x="370" y="50" width="10" height="10" fill="#00f5ff" opacity="0.6"/>
+      <rect x="387" y="50" width="10" height="10" fill="#bf00ff" opacity="0.6"/>
+      <rect x="370" y="68" width="10" height="10" fill="#00f5ff" opacity="0.4"/>
+      <rect x="387" y="68" width="10" height="10" fill="#00f5ff" opacity="0.4"/>
+      <rect x="370" y="86" width="10" height="10" fill="#ffd700" opacity="0.5"/>
+      <rect x="387" y="86" width="10" height="10" fill="#00f5ff" opacity="0.5"/>
+      <!-- Dome -->
+      <ellipse cx="390" cy="40" rx="30" ry="12" fill="none" stroke="#00f5ff" stroke-width="1" opacity="0.4"/>
+      <!-- Side buildings -->
+      <rect x="130" y="70" width="35" height="60" fill="#0a1f3d" stroke="#bf00ff" stroke-width="0.5"/>
+      <rect x="135" y="75" width="8" height="8" fill="#bf00ff" opacity="0.4"/>
+      <rect x="180" y="55" width="45" height="75" fill="#0d2a4a" stroke="#00f5ff" stroke-width="0.5"/>
+      <rect x="185" y="60" width="10" height="10" fill="#39ff14" opacity="0.4"/>
+      <rect x="200" y="60" width="10" height="10" fill="#00f5ff" opacity="0.3"/>
+      <!-- Green rooftop elements -->
+      <rect x="180" y="50" width="45" height="6" fill="#39ff14" opacity="0.2"/>
+      <rect x="440" y="65" width="50" height="65" fill="#0a1f3d" stroke="#bf00ff" stroke-width="0.5"/>
+      <rect x="445" y="70" width="10" height="10" fill="#bf00ff" opacity="0.5"/>
+      <rect x="460" y="70" width="10" height="10" fill="#00f5ff" opacity="0.3"/>
+      <rect x="500" y="75" width="40" height="55" fill="#0d2a4a" stroke="#00f5ff" stroke-width="0.5"/>
+      <rect x="560" y="58" width="55" height="72" fill="#0a1f3d" stroke="#39ff14" stroke-width="0.5"/>
+      <rect x="566" y="64" width="10" height="10" fill="#39ff14" opacity="0.5"/>
+      <rect x="630" y="70" width="40" height="60" fill="#0d2a4a" stroke="#00f5ff" stroke-width="0.5"/>
+      <rect x="680" y="80" width="35" height="50" fill="#0a1f3d" stroke="#bf00ff" stroke-width="0.5"/>
+      <rect x="725" y="65" width="40" height="65" fill="#0d2a4a" stroke="#00f5ff" stroke-width="0.5"/>
+      <!-- Trees -->
+      <ellipse cx="160" cy="128" rx="12" ry="8" fill="#39ff14" opacity="0.3"/>
+      <rect x="158" y="128" width="4" height="8" fill="#1a3d0a" opacity="0.5"/>
+      <ellipse cx="545" cy="128" rx="10" ry="7" fill="#39ff14" opacity="0.3"/>
+      <!-- Ground line -->
+      <rect x="0" y="130" width="820" height="2" fill="#00f5ff" opacity="0.3"/>
+      <!-- Lake Water -->
+      <rect x="0" y="132" width="820" height="48" fill="url(#waterGrad)"/>
+      <ellipse cx="410" cy="150" rx="380" ry="14" fill="none" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
+      <!-- Reflections -->
+      <rect x="375" y="136" width="4" height="16" fill="#00f5ff" opacity="0.15"/>
+      <rect x="385" y="134" width="4" height="20" fill="#bf00ff" opacity="0.1"/>
+      <text x="410" y="174" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="9" fill="#00f5ff" opacity="0.5" letter-spacing="3">HỒ TÂY — WEST LAKE</text>
+    </svg>
+
+    <div class="s1-label">HANOI URBAN TECH INITIATIVE · 2025</div>
+  </div>
+
+  <!-- ══════════════ SLIDE 2 ══════════════ -->
+  <div class="slide slide-2" id="slide-1">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p1"></div>
+
+    <div class="slide-headline">The Hanoi Mission</div>
+    <div class="slide-sub-headline">THE PROBLEM & THE PLOT</div>
+    <div class="section-divider"></div>
+
+    <div class="s2-grid">
+      <div class="glass-card">
+        <p class="s2-body">
+          As Hanoi rapidly urbanizes, we need <span class="highlight">equitable, tech-enabled green spaces</span>.
+          The city has zoned a massive <span class="highlight-gold">400m × 400m</span> plot of land near
+          <span class="highlight">West Lake (Hồ Tây)</span>.
+        </p>
+        <br/>
+        <!-- Mini map graphic -->
+        <svg viewBox="0 0 280 140" width="100%">
+          <rect width="280" height="140" fill="#020817" rx="8"/>
+          <rect x="20" y="20" width="100" height="100" fill="none" stroke="#ffd700" stroke-width="2" stroke-dasharray="6,3"/>
+          <text x="70" y="78" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="9" fill="#ffd700">400m × 400m</text>
+          <text x="70" y="91" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" fill="#ffd700" opacity="0.7">ZONED PLOT</text>
+          <ellipse cx="200" cy="85" rx="60" ry="35" fill="rgba(0,245,255,0.1)" stroke="#00f5ff" stroke-width="1.5"/>
+          <text x="200" y="82" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="8" fill="#00f5ff">HỒ TÂY</text>
+          <text x="200" y="93" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" fill="#00f5ff" opacity="0.7">WEST LAKE</text>
+          <line x1="120" y1="70" x2="140" y2="75" stroke="#fff" stroke-width="0.5" stroke-dasharray="3,2"/>
+        </svg>
+      </div>
+
+      <div class="s2-task-box">
+        <div class="s2-task-label">⚡ THE TASK</div>
+        <p class="s2-body" style="color:var(--text);">
+          Your <span class="highlight">architectural tech firm</span> must design a
+          <span class="highlight-gold">Smart Community Hub</span> using:
+        </p>
+        <br/>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <span style="font-size:1.8rem;">🤖</span>
+          <span style="font-size:13px;">AI for <strong style="color:var(--neon-purple)">concept generation</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:1.8rem;">📐</span>
+          <span style="font-size:13px;">Mathematics for <strong style="color:var(--neon-cyan)">precise blueprint scaling</strong></span>
+        </div>
+        <div style="margin-top:20px;padding:12px 16px;background:rgba(255,215,0,0.07);border-radius:8px;border-left:3px solid var(--neon-gold);">
+          <span style="font-size:12px;color:var(--neon-gold);">📍 Location: Near Hồ Tây, Hanoi, Vietnam</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 3 (NEW): THE REALITY CHECK ══════════════ -->
+  <div class="slide slide-3" id="slide-2">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p2"></div>
+
+    <div class="slide-headline">The Reality Check</div>
+    <div class="slide-sub-headline">WHY WE NEED SCALE</div>
+    <div class="section-divider"></div>
+
+    <div class="rc-split">
+      <div class="glass-card">
+        <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:var(--neon-purple);margin-bottom:10px;">🤖 AI PROMPT SUBMITTED</div>
+        <div class="ai-prompt-box">"A photograph of a life-sized Boeing 747 parked inside a standard 7th-grade classroom."</div>
+        <div style="margin-top:14px;font-size:13px;color:var(--text-dim);line-height:1.75;">
+          <strong style="color:#fff;">Boeing 747 real dimensions:</strong><br/>
+          Length: <span class="highlight">70 m</span> &nbsp;·&nbsp; Wingspan: <span class="highlight">64 m</span> &nbsp;·&nbsp; Height: <span class="highlight">19 m</span>
+        </div>
+        <div style="margin-top:10px;padding:10px 14px;background:rgba(255,215,0,0.07);border-radius:8px;border-left:2px solid var(--neon-gold);font-size:13px;color:var(--text-dim);">
+          Classroom: <span class="highlight-gold">9 m × 8 m × 3 m</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:#ff4466;margin-bottom:2px;">⚠ AI OUTPUT: SCALE ERROR</div>
+        <div class="glitch-box" style="position:relative;overflow:hidden;">
+          <!-- Reveal cover (hidden on click) -->
+          <div id="plane-reveal-cover" style="position:absolute;inset:0;z-index:3;background:rgba(15,5,5,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border-radius:10px;cursor:pointer;" onclick="revealPlane()">
+            <div style="font-size:3rem;">✈</div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px;color:#ff4466;animation:flicker 1.2s infinite;">REALITY CHECK LOADING...</div>
+            <div style="padding:10px 22px;border:1px solid #ff4466;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:#ff4466;">REVEAL AI OUTPUT ▶</div>
+          </div>
+          <img src="Gemini_Generated_Image_fg6fm4fg6fm4fg6f.png" alt="Boeing 747 in classroom" style="width:100%;display:block;border-radius:10px;"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="inquiry-q">
+      🔍 &nbsp;"Why does the AI fail to put a real plane in the room? What happens if you don't shrink <em>every part</em> of an object by the <strong>exact same ratio</strong>?"
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 4 (NEW): THE MISSING LINK ══════════════ -->
+  <div class="slide slide-4" id="slide-3">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p3"></div>
+
+    <div class="slide-headline">The Missing Link</div>
+    <div class="slide-sub-headline">HOW TO FIND THE SCALE</div>
+    <div class="section-divider"></div>
+
+    <div style="display:flex;gap:22px;width:100%;max-width:960px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="glass-card" style="padding:14px 16px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:var(--neon-gold);margin-bottom:10px;">🗺 HANOI DISTRICT MAP · LEGEND CORRUPTED</div>
+          <img src="Gemini_Generated_Image_71cit871cit871ci.png" alt="Hanoi District Map" style="width:100%;border-radius:8px;border:1px solid rgba(255,215,0,0.35);"/>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;">
+        <div class="s2-task-box">
+          <div class="s2-task-label">⏱ 3-MINUTE MISSION</div>
+          <p style="font-size:14px;color:var(--text);line-height:1.65;">Calculate the exact <span class="highlight">real-world distance</span> from <span class="highlight-gold">Hoan Kiem Lake</span> to <span class="highlight">West Lake</span>.</p>
+        </div>
+        <div class="glass-card" style="border-color:rgba(57,255,20,0.3);">
+          <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:var(--neon-green);margin-bottom:10px;">💡 CRITICAL THINKING PROMPT</div>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">You have a ruler but <strong style="color:#fff;">no map key</strong>. How can you use a <span class="highlight-gold">known landmark</span> — like your school's football pitch (100 m) — to figure out the map's scale?</p>
+        </div>
+        <div class="discover-btn" onclick="this.nextElementSibling.style.display='flex';this.style.display='none';">🔓 CLICK TO REVEAL THE LOGIC</div>
+        <div class="discover-reveal" style="display:none;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;color:var(--neon-cyan);margin-bottom:12px;">✨ THE DISCOVERY</div>
+          <div class="math-formula" style="font-size:12px;line-height:2.2;text-align:center;">
+            Known Real-World Length<br/>÷ Measured Paper Length<br/>= <span style="color:var(--neon-gold);font-size:22px;font-weight:900;">k</span> &nbsp;(The Scale Factor)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 5 ══════════════ -->
+  <div class="slide slide-5" id="slide-4">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p4"></div>
+
+    <div class="slide-headline">Your AI Co-Pilot</div>
+    <div class="slide-sub-headline">THE TOOLS OF THE TRADE</div>
+    <div class="section-divider"></div>
+
+    <div class="s3-tools">
+      <div class="tool-card">
+        <div class="tool-icon">🎨</div>
+        <div style="width: 100%;">
+          <div class="tool-title">TOOL 01 — IMAGE GENERATION</div>
+          <div class="tool-body">
+            Prompt an <strong style="color:#fff">AI image creator</strong> to design one stunning,
+            <strong style="color:var(--neon-green)">photorealistic architectural rendering</strong>
+            of your Smart Community Hub.
+            <div class="prompt-block prompt-green">
+              "A photorealistic, wide-angle architectural concept rendering of a [insert structure type]. It is located near a lake in Hanoi. It must feature [insert 2-3 specific design elements like 'solar panels' or 'neon accents']. The style should be modern, eco-friendly, and highly futuristic."
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-icon">🔍</div>
+        <div style="width: 100%;">
+          <div class="tool-title">TOOL 02 — DATA EXTRACTION</div>
+          <div class="tool-body">
+            Prompt a <strong style="color:#fff">text AI</strong> to find the
+            <strong style="color:var(--neon-cyan)">real-world dimensions</strong>
+            of your chosen structures.
+            <div class="prompt-block prompt-cyan">
+              "Act as an expert urban planner. I am designing a [insert structure: e.g., sustainable community center] for a public park. What is a realistic footprint for this building? Provide a realistic length and width in meters. Do not calculate the total area and do not scale these numbers. Give me only the real-world dimensions."
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="
+        background:linear-gradient(135deg,rgba(57,255,20,0.08),rgba(0,245,255,0.06));
+        border:1px solid rgba(57,255,20,0.3);border-radius:12px;padding:14px 28px;
+        display:flex;align-items:center;gap:16px;
+      ">
+        <span style="font-size:2rem;">💡</span>
+        <span style="font-size:13px;color:var(--text-dim);">
+          <strong style="color:#fff">Remember:</strong> If the AI only gives you an area (e.g., "500m²"), tell it: <em style="color:var(--neon-gold)">"Try again and give me a specific length and width that equals that area."</em>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 6 ══════════════ -->
+  <div class="slide slide-6" id="slide-5">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p5"></div>
+
+    <div class="slide-headline">The 3 Mandatory Zones</div>
+    <div class="slide-sub-headline">WHAT YOU MUST BUILD</div>
+    <div class="section-divider"></div>
+
+    <p style="font-size:14px;color:var(--text-dim);text-align:center;margin-bottom:20px;">
+      Your <span class="highlight-gold">400m × 400m</span> plot must seamlessly integrate three zones:
+    </p>
+
+    <div class="zones-grid">
+      <div class="zone-card">
+        <span class="zone-icon">🌱</span>
+        <div class="zone-num">ZONE 01</div>
+        <div class="zone-title">Sustainable<br/>Community Center</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:12px;line-height:1.5;">Solar-powered. Green-roofed. Community-first.</p>
+        <div style="margin-top:10px;padding:6px 10px;background:rgba(57,255,20,0.12);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:13px;color:var(--neon-green);text-align:center;">$1,000 / m²</div>
+      </div>
+      <div class="zone-card">
+        <span class="zone-icon">💻</span>
+        <div class="zone-num">ZONE 02</div>
+        <div class="zone-title">Open-Air Tech &amp;<br/>Study Pavilion</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:12px;line-height:1.5;">AI workstations. Shaded learning pods. Wi-Fi mesh.</p>
+        <div style="margin-top:10px;padding:6px 10px;background:rgba(0,245,255,0.12);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:13px;color:var(--neon-cyan);text-align:center;">$500 / m²</div>
+      </div>
+      <div class="zone-card">
+        <span class="zone-icon">🏞️</span>
+        <div class="zone-num">ZONE 03</div>
+        <div class="zone-title">Eco-Recreation<br/>Area</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:12px;line-height:1.5;">Lakeside trails. Biophilic gardens. Sports zones.</p>
+        <div style="margin-top:10px;padding:6px 10px;background:rgba(191,0,255,0.12);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:13px;color:#bf7fff;text-align:center;">$100 / m²</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px 28px;background:linear-gradient(135deg,rgba(255,50,50,0.15),rgba(255,215,0,0.08));border:2px solid rgba(255,50,50,0.5);border-radius:10px;text-align:center;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:#ff4466;letter-spacing:3px;">MAX BUDGET: $25,000,000</div>
+      <div style="font-size:11px;color:var(--neon-gold);margin-top:4px;letter-spacing:2px;">Total Cost = (A₁ × $1,000) + (A₂ × $500) + (A₃ × $100)</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 7 ══════════════ -->
+  <div class="slide slide-7" id="slide-6">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p6"></div>
+
+    <div class="slide-headline">The Math Mandate — Phase 1</div>
+    <div class="slide-sub-headline">SCALING REALITY</div>
+    <div class="section-divider"></div>
+
+    <div class="math-grid">
+      <div>
+        <p style="font-size:14px;color:var(--text-dim);margin-bottom:20px;">
+          AI gives you the ideas, but <strong style="color:#fff">human logic</strong> makes them buildable.
+          Establish the math on your <strong style="color:var(--neon-cyan)">A3 grid paper</strong>.
+        </p>
+        <ul class="checklist">
+          <li>
+            <div class="check-icon">①</div>
+            <span>Define your <strong style="color:var(--neon-cyan)">scale</strong>
+              (e.g., 1 square = ? metres) to fit the 400m × 400m plot on your paper.</span>
+          </li>
+          <li>
+            <div class="check-icon">②</div>
+            <span>Establish your <strong style="color:var(--neon-cyan)">scale factor k</strong>
+              — the constant of proportionality.</span>
+          </li>
+          <li>
+            <div class="check-icon">③</div>
+            <span>Write the governing equation <strong style="color:var(--neon-cyan)">y = kx</strong>
+              for your blueprint.</span>
+          </li>
+          <li>
+            <div class="check-icon">④</div>
+            <span>Calculate the <strong style="color:var(--neon-cyan)">drawing dimensions (x)</strong>
+              to plot your structures accurately on the grid.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="glass-card" style="margin-bottom:20px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--neon-purple);margin-bottom:12px;">THE PROPORTIONALITY MODEL</div>
+          <div class="math-formula" style="font-size:22px;margin-bottom:12px;">y = kx</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr style="color:var(--text-dim);">
+              <td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+                <span style="color:var(--neon-cyan);font-family:'Orbitron',sans-serif">x</span>
+              </td>
+              <td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08)">Drawing dimension (cm or squares)</td>
+            </tr>
+            <tr style="color:var(--text-dim);">
+              <td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+                <span style="color:var(--neon-purple);font-family:'Orbitron',sans-serif">y</span>
+              </td>
+              <td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08)">Real-world dimension (metres)</td>
+            </tr>
+            <tr style="color:var(--text-dim);">
+              <td style="padding:6px 0;">
+                <span style="color:var(--neon-gold);font-family:'Orbitron',sans-serif">k</span>
+              </td>
+              <td style="padding:6px 0;">Scale factor (metres per square)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.3);border-radius:10px;padding:14px 18px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--neon-gold);margin-bottom:8px;">💡 EXAMPLE SCALE</div>
+          <p style="font-size:13px;color:var(--text);">If 1 grid square = <strong style="color:var(--neon-gold)">10m</strong>, then <strong>k = 10</strong></p>
+          <p style="font-size:13px;color:var(--text);">A 50m structure → x = 50 ÷ 10 = <strong style="color:var(--neon-gold)">5 squares</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 8 ══════════════ -->
+  <div class="slide slide-8" id="slide-7">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p7"></div>
+
+    <div class="slide-headline">The Math Mandate — Phase 2</div>
+    <div class="slide-sub-headline">AREA & THE BILLBOARD EXTENSION</div>
+    <div class="section-divider"></div>
+
+    <div class="math-grid">
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--neon-cyan);margin-bottom:16px;">PROVE YOUR MATH</div>
+
+        <div class="task-row">
+          <div class="task-num">1</div>
+          <div class="task-text">
+            <strong style="color:var(--neon-cyan)">Actual Area.</strong><br/>
+            Calculate the actual area of each structure:<br/>
+            <div class="math-formula" style="text-align:left;margin-top:8px;font-size:13px;padding:10px 14px;">
+              Area = Actual Length × Actual Width
+            </div>
+            <p style="font-size:12px;color:#ff6b6b;margin-top:8px;">
+              ⚠ Do <strong>NOT</strong> scale up the paper area — always work with real-world dimensions!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--neon-purple);margin-bottom:16px;">THE MAYOR'S CHALLENGE</div>
+
+        <div class="task-row">
+          <div class="task-num" style="background:linear-gradient(135deg,var(--neon-purple),#ff00aa);">2</div>
+          <div class="task-text">
+            <strong style="color:var(--neon-purple)">The 3× Expansion Challenge.</strong><br/>
+            The Hanoi People's Committee wants to display your map on a
+            <strong style="color:#fff">construction billboard</strong> that is exactly
+            <strong style="color:var(--neon-gold)">3 times the size</strong> of your paper.
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,rgba(191,0,255,0.12),rgba(255,0,170,0.08));border:1px solid rgba(191,0,255,0.4);border-radius:12px;padding:18px 22px;margin-top:12px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--neon-purple);margin-bottom:12px;">CALCULATE & STATE</div>
+          <div class="math-formula" style="font-size:14px;margin-bottom:10px;">New Scale = Original Scale × 3</div>
+          <p style="font-size:13px;color:var(--text-dim);">If 1 square = 10m on paper,<br/>then 1 square = <strong style="color:var(--neon-purple)">? m</strong> on the billboard?</p>
+          <p style="font-size:12px;color:var(--neon-gold);margin-top:10px;">🎯 State your new billboard scale clearly!</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px;display:flex;gap:16px;justify-content:center;">
+      <div style="padding:10px 22px;background:rgba(0,245,255,0.07);border:1px solid var(--neon-cyan);border-radius:8px;font-size:12px;color:var(--neon-cyan);font-family:'Orbitron',sans-serif;letter-spacing:2px;">
+        ZONE 1 AREA = ? m²
+      </div>
+      <div style="padding:10px 22px;background:rgba(0,245,255,0.07);border:1px solid var(--neon-cyan);border-radius:8px;font-size:12px;color:var(--neon-cyan);font-family:'Orbitron',sans-serif;letter-spacing:2px;">
+        ZONE 2 AREA = ? m²
+      </div>
+      <div style="padding:10px 22px;background:rgba(0,245,255,0.07);border:1px solid var(--neon-cyan);border-radius:8px;font-size:12px;color:var(--neon-cyan);font-family:'Orbitron',sans-serif;letter-spacing:2px;">
+        ZONE 3 AREA = ? m²
+        <div style="margin-top:16px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.35);border-radius:10px;padding:14px 18px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--neon-gold);margin-bottom:10px;">TASK 3 — THE FINANCIAL AUDIT</div>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">Using your real-world areas from Tasks 1 &amp; 2, calculate your <strong style="color:var(--neon-gold);">Total Construction Cost</strong>:</p>
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:10px 14px;margin:10px 0;font-family:'Orbitron',sans-serif;font-size:11px;color:var(--neon-gold);line-height:2;text-align:center;">
+            (A₁ × $1,000) + (A₂ × $500) + (A₃ × $100) ≤ $25,000,000 ?
+          </div>
+          <p style="font-size:12px;color:#ff4466;">??? If your total exceeds $25M, you must rescale or resize one or more zones and recalculate.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 9 ══════════════ -->
+  <div class="slide slide-9" id="slide-8">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p8"></div>
+
+    <div class="slide-headline">Defend Your Design</div>
+    <div class="slide-sub-headline">THE PITCH — CITY COUNCIL PRESENTATION</div>
+    <div class="section-divider"></div>
+
+    <div class="pitch-grid">
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--neon-green);margin-bottom:16px;">YOUR PRESENTATION REQUIREMENTS</div>
+
+        <div class="req-card">
+          <div class="req-icon">🖼️</div>
+          <div class="req-text"><strong style="color:var(--neon-green)">Display</strong> your AI-generated concept art rendering of the hub.</div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">📐</div>
+          <div class="req-text">
+            <strong style="color:var(--neon-green)">State</strong> your constant of proportionality
+            <strong style="color:var(--neon-cyan)">k</strong> and governing equation
+            <strong style="color:var(--neon-cyan)">y = kx</strong>.
+          </div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">📊</div>
+          <div class="req-text"><strong style="color:var(--neon-green)">Justify</strong> your total actual area utilized for all three zones.</div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">🗺️</div>
+        <div class="req-card">
+          <div class="req-icon">💰</div>
+          <div class="req-text"><strong style="color:#ffd700">State</strong> your <strong style="color:#ffd700;">Total Budget Spent</strong> and justify how you balanced cost vs. space across all three zones.</div>
+        </div>
+        <div class="req-card">
+          <div class="req-icon">🗺️</div>
+          <div class="req-text"><strong style="color:var(--neon-green)">Reveal</strong> your new billboard scale and how you calculated it.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="timer-box">
+          <div class="timer-num">3</div>
+          <div class="timer-label">MINUTES TO PITCH</div>
+          <br/>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">You are presenting to the<br/><strong style="color:var(--neon-gold)">Hanoi City Council</strong>.<br/>Make your case strong!</p>
+        </div>
+
+        <div style="margin-top:18px;background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.3);border-radius:10px;padding:14px 18px;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--neon-green);margin-bottom:8px;">🏆 EVALUATION CRITERIA</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-dim);">
+            <div>✅ Mathematical accuracy of scaling</div>
+            <div>✅ Correct area calculations</div>
+            <div>✅ Billboard scale logic</div>
+            <div>✅ Quality of AI concept art</div>
+            <div>✅ Clarity of presentation</div>
+            <div style="color:var(--neon-gold);">✅ Budget accuracy &amp; rationalization</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SLIDE 10: TEAM PITCH DASHBOARD ══════════════ -->
+  <div class="slide slide-10" id="slide-9">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p9"></div>
+
+    <div class="slide-headline" style="margin-bottom:6px;">Team Pitch Dashboard</div>
+    <div class="slide-sub-headline">LIVE SUBMISSIONS — CITY COUNCIL REVIEW</div>
+
+    <div class="padlet-slideshow-embed" style="width:1080px;height:720px;"><p style="padding:0;margin:0;width:100%;height:100%"><iframe src="https://padlet.com/embed/grv4rhbpi6meu03r/slideshow?autoplay=0&amp;loop=0&amp;duration=auto" frameborder="0" allow="clipboard-write" style="width:100%;height:100%;display:block;padding:0;margin:0"></iframe></p></div>
+  </div>
+  <!-- ══════════════ SLIDE 11: REFLECTIONS ══════════════ -->
+  <div class="slide slide-11" id="slide-10">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <div class="scan-line"></div>
+    <div class="particles" id="p10"></div>
+    <div class="slide-headline" style="margin-bottom:6px;">Reflections</div>
+    <div class="slide-sub-headline">CLASS REFLECTION BOARD</div>
+    <div style="width:100%;max-width:1100px;margin-top:10px;">
+      <div class="padlet-embed" style="border:1px solid rgba(0,0,0,0.1);border-radius:2px;box-sizing:border-box;overflow:hidden;position:relative;width:100%;background:#F4F4F4"><p style="padding:0;margin:0"><iframe src="https://padlet.com/embed/d5jasg7tns5iv7lf" frameborder="0" allow="camera;microphone;geolocation;display-capture;clipboard-write" style="width:100%;height:608px;display:block;padding:0;margin:0"></iframe></p><div style="display:flex;align-items:center;justify-content:end;margin:0;padding:8px 8px 8px 0"><a href="https://padlet.com?ref=embed" style="display:flex;align-items:center;gap:5px;flex-grow:0;margin:0;border:none;padding:0;text-decoration:none" target="_blank"><span aria-hidden style="color:#9E9E9E;font-size:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;line-height:1">Made with</span><img src="https://padlet.net/emails/padlet_email_logo_2026_text-dark-200.png" height="12" style="padding:0;margin:0;background:0 0;border:none;box-shadow:none;display:block" alt="Made with Padlet"></a></div></div>
+    </div>
+  </div>
+
+</div><!-- end slide-container -->
+
+<script>
+  let current = 0;
+  const total = 11;
+  const slides = document.querySelectorAll('.slide');
+
+  function changeSlide(dir) {
+    const next = current + dir;
+    if (next < 0 || next >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current - dir + dir - dir + dir].classList.remove('exit'), 700); // cleanup
+    current = next;
+    slides[current].classList.add('active');
+    // cleanup previous
+    setTimeout(() => {
+      slides.forEach((s, i) => { if (i !== current) s.classList.remove('exit', 'active'); });
+    }, 710);
+    updateUI();
+  }
+
+  // Simpler, clean version:
+  function goTo(idx) {
+    if (idx < 0 || idx >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].style.transform = '';
+    current = idx;
+    slides[current].classList.add('active');
+    updateUI();
+  }
+
+  function changeSlide(dir) {
+    goTo(current + dir);
+  }
+
+  function updateUI() {
+    document.getElementById('slideNum').textContent = String(current + 1).padStart(2, '0') + ' / 11';
+    document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    if (window.victoriaSync) victoriaSync.broadcastSlide(current + 1);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
+  });
+
+  // Particles
+  function spawnParticles(containerId, count = 12) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const colors = ['#00f5ff', '#bf00ff', '#39ff14', '#ffd700'];
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 4 + 1;
+      p.style.cssText = `
+        left:${Math.random() * 100}%;
+        width:${size}px; height:${size}px;
+        background:${colors[Math.floor(Math.random() * colors.length)]};
+        animation-duration:${8 + Math.random() * 12}s;
+        animation-delay:${Math.random() * 8}s;
+        box-shadow:0 0 6px currentColor;
+      `;
+      container.appendChild(p);
+    }
+  }
+
+  for (let i = 0; i < 11; i++) spawnParticles('p' + i, 14);
+  updateUI();
+
+  function revealPlane() {
+    const cover = document.getElementById('plane-reveal-cover');
+    if (cover) cover.style.display = 'none';
+  }
+
+  // Reset reveal cover when leaving/returning to slide 3
+  const _origGoTo = goTo;
+  goTo = function(idx) {
+    _origGoTo(idx);
+    if (idx !== 2) { // slide index 2 = Slide 3
+      const c = document.getElementById('plane-reveal-cover');
+      if (c) c.style.display = 'flex';
+    }
+  };
+</script>
+</body>
+</html>
